@@ -9,10 +9,19 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/myapp', {
+mongoose.connect('mongodb://127.0.0.1:27017/myapp', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
+app.get('/api/emotion-detection', (req, res) => {
+  const pythonProcess = spawn('python', ['path/to/emotion_detection_script.py']);
+
+  pythonProcess.stdout.on('data', (data) => {
+      const emotions = JSON.parse(data.toString());
+      res.json({ emotions });
+  });
+});
+
 
 // Routes
 const authRoutes = require('./routes/auth');
