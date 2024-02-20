@@ -38,9 +38,10 @@
 }
 /* Container styles */
 .form-container {
-  width: 300px;
+  width: 80%;
+  height: 70%;
   margin: auto;
-  padding: 20px;
+  padding: 200px;
   background-color: #f0f8ff; /* Light blue background */
   border-radius: 10px;
 }

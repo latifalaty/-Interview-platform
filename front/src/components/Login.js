@@ -16,7 +16,7 @@ const Login = () => {
 
   return (
     <div className="form-container">
-    <h2>Login</h2>
+    <h1 className="text-center" >Login</h1>
     <input type="email" className="form-input" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
     <input type="password" className="form-input" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
     <button className="form-button" onClick={handleLogin}>Login</button>
