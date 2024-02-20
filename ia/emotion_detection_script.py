@@ -3,15 +3,14 @@ import json
 import numpy as np
 from tensorflow.keras.models import load_model
 
-# Load the trained Keras model
+# model
 model = load_model('C:/Users/user/Entretien-app/ia/emotion_detection_model.h5')
 
-# Define emotion labels
+#classment
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
-# Function to detect facial emotions
+# la detection
 def detect_emotions():
-    # Open the webcam
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Unable to open webcam.")
@@ -23,20 +22,22 @@ def detect_emotions():
             print("Error: Unable to capture frame.")
             break
         
-        # Perform facial emotion detection on the frame
+        
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         resized_frame = cv2.resize(gray_frame, (48, 48))
         normalized_frame = resized_frame / 255.0
         reshaped_frame = normalized_frame[np.newaxis, :, :, np.newaxis]
         
-        # Predict the emotion
+        
         prediction = model.predict(reshaped_frame)
         max_index = np.argmax(prediction)
         detected_emotion = emotion_labels[max_index]
 
-        # Print the detected emotion
-        print("Detected Emotion:", detected_emotion)
-
+        # resultat de detection
+        emotion_data = {'emotion': detected_emotion}
+        emotion_json = json.dumps(emotion_data)
+        print(emotion_json)  # Print for debugging
+        
         cv2.imshow('Webcam', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

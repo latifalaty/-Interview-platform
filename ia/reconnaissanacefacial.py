@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# Define your CNN model architecture
+# CNN model
 model = Sequential([
     Conv2D(32, (3, 3), activation='relu', input_shape=(48, 48, 1)),
     MaxPooling2D((2, 2)),
@@ -24,15 +24,15 @@ model.compile(optimizer='adam',
               loss=SparseCategoricalCrossentropy(),
               metrics=['accuracy'])
 
-# Define paths to your train and test directories
+# les données de traitement et de test
 train_dir = 'C:/Users/user/Downloads/archive/train'
 test_dir = 'C:/Users/user/Downloads/archive/test'
 
-# Define ImageDataGenerator for data augmentation and preprocessing
+# le préprocessing
 train_datagen = ImageDataGenerator(rescale=1./255)
 test_datagen = ImageDataGenerator(rescale=1./255)
 
-# Define batch size
+# la longeur de batch 
 batch_size = 32
 
 # Generate batches of training and testing data
@@ -52,7 +52,7 @@ test_generator = test_datagen.flow_from_directory(
     class_mode='sparse'
 )
 
-# Train the model using the training generator
+# le train
 model.fit(
     train_generator,
     steps_per_epoch=train_generator.samples // batch_size,
@@ -61,5 +61,5 @@ model.fit(
     validation_steps=test_generator.samples // batch_size
 )
 
-# Save the trained model
+# sauvgarde de model traité
 model.save('emotion_detection_model.h5')
