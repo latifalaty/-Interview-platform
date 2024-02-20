@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { navigate } from 'react-router-dom';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,8 @@ const SignUp = () => {
     try {
       const response = await axios.post('http://localhost:5000/api/auth/signup', { email, password, userType });
       console.log(response.data);
+      alert('Compte bien créer !'); 
+      navigate('/login'); 
     } catch (error) {
       console.error(error.response.data.error);
     }
