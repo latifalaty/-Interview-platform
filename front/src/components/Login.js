@@ -10,8 +10,7 @@ const Login = () => {
   const handleLogin = async () => {
     try {
       const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      console.log(response.data);
-      navigate('/'); 
+      alert('welcome' ); 
     } catch (error) {
       console.error(error.response.data.error);
       setError(error.response.data.error); 

@@ -12,7 +12,6 @@ const SignUp = () => {
       const response = await axios.post('http://localhost:5000/api/auth/signup', { email, password, userType });
       console.log(response.data);
       alert('Compte bien créer !'); 
-      navigate('/login'); 
     } catch (error) {
       console.error(error.response.data.error);
     }
