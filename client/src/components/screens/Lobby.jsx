@@ -33,28 +33,33 @@ const LobbyScreen = () => {
   }, [socket, handleJoinRoom]);
 
   return (
-    <div>
-      <h1>Entretien</h1>
-      <form onSubmit={handleSubmitForm}>
-        <label htmlFor="email">Email ID</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <br />
-        <label htmlFor="room">Room Number</label>
-        <input
-          type="text"
-          id="room"
-          value={room}
-          onChange={(e) => setRoom(e.target.value)}
-        />
-        <br />
-        <button>Join</button>
-      </form>
+    <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto" }}>
+  <h1 style={{ marginBottom: "20px" }}>Interview</h1>
+  <form onSubmit={handleSubmitForm} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "row", marginBottom: "20px" }}>
+      <label htmlFor="email" style={{ width: "100px", marginRight: "10px", textAlign: "left" }}>Email ID</label>
+      <input
+        type="email"
+        id="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ padding: "5px", width: "300px" }}
+      />
     </div>
+    <div style={{ display: "flex", flexDirection: "row", marginBottom: "20px" }}>
+      <label htmlFor="room" style={{ width: "100px", marginRight: "10px", textAlign: "left" }}>Room Number</label>
+      <input
+        type="text"
+        id="room"
+        value={room}
+        onChange={(e) => setRoom(e.target.value)}
+        style={{ padding: "5px", width: "300px" }}
+      />
+    </div>
+    <button style={{ padding: "10px 20px", fontSize: "20px", backgroundColor: "#007bff", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>Join</button>
+  </form>
+</div>
+
   );
 };
 

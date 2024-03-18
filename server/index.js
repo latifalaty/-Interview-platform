@@ -35,4 +35,10 @@ io.on("connection", (socket) => {
     console.log("peer:nego:done", ans);
     io.to(to).emit("peer:nego:final", { from: socket.id, ans });
   });
+  socket.on("disconnect", () => {
+    console.log(`Socket Disconnected`, socket.id);
+    const email = socketidToEmailMap.get(socket.id);
+    emailToSocketIdMap.delete(email);
+    socketidToEmailMap.delete(socket.id);
+  });
 });

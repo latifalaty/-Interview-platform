@@ -11,10 +11,20 @@ const RoomPage = () => {
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
+  const [isConnected, setIsConnected] = useState(false);
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
     setRemoteSocketId(id);
+    setIsConnected(true);
+  }, []);
+
+  const handleDisconnect = useCallback(() => {
+    // Actions à effectuer lors de la déconnexion
+    setMyStream(null);
+    setRemoteSocketId(null);
+    setIsConnected(false);
+    // Autres actions de nettoyage peuvent être ajoutées ici
   }, []);
 
   const handleCallUser = useCallback(async () => {
@@ -41,6 +51,7 @@ const RoomPage = () => {
     },
     [socket]
   );
+  
   const sendStreams = useCallback(() => {
     if (myStream) {
       myStream.getTracks().forEach(track => {
@@ -53,7 +64,6 @@ const RoomPage = () => {
       });
     }
   }, [myStream]);
-  
 
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
@@ -96,7 +106,6 @@ const RoomPage = () => {
     });
   }, []);
 
-
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
     socket.on("incomming:call", handleIncommingCall);
@@ -119,38 +128,91 @@ const RoomPage = () => {
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
   ]);
-
   return (
-    <div>
-      <h1>Room Page</h1>
-      <h4>{remoteSocketId ? "Connected" : "No one in room"}</h4>
-      {myStream && <button onClick={sendStreams}></button>}
-      {remoteSocketId && <button onClick={handleCallUser}>CALL</button>}
-      
-      {remoteStream && (
-        <>
-          <h1>Remote Stream</h1>
-         
-          <Video muted  url={remoteStream}/>
-        </>
-      )}
-      {myStream && (
-        <>
-          <h1>My Stream</h1>
-            <ReactPlayer
-            playing
-            muted
-            height="50%"
-            width="50%"
-            url={myStream}
-          
-          />
-          <Recording/>
-        </>
+    <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        {/* Affichage de la vidéo distante */}
+        {remoteStream && (
+          <div>
+            <h1>Remote Stream</h1>
+            <Video muted url={remoteStream}/>
+          </div>
+        )}
         
-      )}
+        {/* Affichage de la vidéo locale */}
+        {myStream && (
+          <div>
+            <h1>My Stream</h1>
+            <ReactPlayer
+              playing
+              muted
+              height="80%"  // Augmentation de la hauteur à 60%
+              width="100%" // Utilisation de toute la largeur disponible
+              url={myStream}
+            />
+          </div>
+        )}
+      </div>
+  
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
+        {/* Boutons de déconnexion */}
+        <div style={{ marginBottom: "20px" }}>
+          <button 
+            style={{ 
+              padding: "10px 20px", 
+              fontSize: "20px", 
+              backgroundColor: "#dc3545", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: "5px", 
+              cursor: "pointer",
+              marginRight: "10px"
+            }} 
+            onClick={handleDisconnect}
+          >
+            Disconnect
+          </button>
+  
+          <button 
+            style={{ 
+              padding: "10px 20px", 
+              fontSize: "20px", 
+              backgroundColor: "#dc3545", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: "5px", 
+              cursor: "pointer",
+              marginRight: "10px"
+            }}  
+            onClick={sendStreams}
+          >
+            Send Streams
+          </button>
+  
+          {remoteSocketId && 
+            <button 
+              style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#007bff", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }} 
+              onClick={handleCallUser}
+            >
+              CALL
+            </button>
+          }
+        </div>
+      </div>
     </div>
   );
+  
+  
+  
 };
 
 export default RoomPage;

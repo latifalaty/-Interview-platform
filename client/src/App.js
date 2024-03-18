@@ -69,7 +69,7 @@ function App() {
               <Route path="*" element={<Error />} />
               <Route path="/video" element={<Video/>}/>
               <Route path="/candidate" element={<CandidatComponent/>}/>
-              <Route path="/recruiter" element={<Recruteur/>}/> 
+              <Route path="/recruiter" /> 
                <Route path="/record" element={<Recording/>}/>
               <Route path="/call" element={<LobbyScreen />} />
         <Route path="/room/:roomId" element={<RoomPage />} />

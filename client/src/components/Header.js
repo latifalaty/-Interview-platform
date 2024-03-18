@@ -53,7 +53,7 @@ return (
         <header>
             <nav>
 
-                <NavLink to="/"><h1>Mern App</h1></NavLink>
+                <NavLink to="/"><h1>On ligne Interview App </h1></NavLink>
                 <div className="avtar">
                     {
                         (logindata?.ValidUserOne) ? <Avatar style={{ background: "salmon", fontWeight: "bold", textTransform: "capitalize" }} onClick={handleClick}>{logindata.ValidUserOne.fname[0].toUpperCase()}</Avatar> :
