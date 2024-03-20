@@ -1,0 +1,90 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const QuestionReponse = () => {
+    const [questions, setQuestions] = useState([]);
+    const [question, setQuestion] = useState('');
+    const [reponse, setReponse] = useState('');
+    const [category, setCategory] = useState('');
+    const [editingQuestionId, setEditingQuestionId] = useState(null);
+
+    // Liste des catégories disponibles
+    const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
+
+    useEffect(() => {
+        fetchQuestions();
+    }, []);
+
+    const fetchQuestions = async () => {
+        try {
+            const response = await axios.get('http://localhost:8009/questions');
+            setQuestions(response.data);
+        } catch (error) {
+            console.error("Error fetching questions:", error);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (editingQuestionId) {
+            await axios.put(`http://localhost:8009/api/question/${editingQuestionId}`, { question, reponse, category });
+            setEditingQuestionId(null);
+        } else {
+            await axios.post('http://localhost:8009/createquestion', { question, reponse, category });
+        }
+        setQuestion('');
+        setReponse('');
+        setCategory('');
+        fetchQuestions();
+    };
+
+    const handleEdit = (question) => {
+        setQuestion(question.question);
+        setReponse(question.reponse);
+        setCategory(question.category);
+        setEditingQuestionId(question._id);
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this question?')) {
+            await axios.delete(`http://localhost:8009/api/question/${id}`);
+            fetchQuestions();
+        }
+    };
+
+    return (
+        <div className="container mt-5">
+            <h1 className="my-4">Manage Questions and Answers</h1>
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <input type="text" className="form-control" placeholder="Question" value={question} onChange={(e) => setQuestion(e.target.value)} />
+                </div>
+                <div className="form-group">
+                    <textarea className="form-control" rows="3" placeholder="Answer" value={reponse} onChange={(e) => setReponse(e.target.value)}></textarea>
+                </div>
+                <div className="form-group">
+                    <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
+                        <option value="">Select Category</option>
+                        {categories.map((cat, index) => (
+                            <option key={index} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                </div>
+                <button type="submit" className="btn btn-primary">{editingQuestionId ? 'Update Question' : 'Add Question'}</button>
+            </form>
+            <ul className="list-group mt-4">
+                {questions.map(question => (
+                    <li key={question._id} className="list-group-item">
+                        <h3>{question.question}</h3>
+                        <p>{question.reponse}</p>
+                        <p><strong>Category:</strong> {question.category}</p>
+                        <button onClick={() => handleEdit(question)} className="btn btn-primary mr-2">Edit</button>
+                        <button onClick={() => handleDelete(question._id)} className="btn btn-danger">Delete</button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+export default QuestionReponse;

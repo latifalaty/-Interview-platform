@@ -23,9 +23,13 @@ const Login = () => {
 
             const data = await response.json();
             console.log("Response:", data);
+
             if (response.status === 200) {
                 // Stocker le token dans localStorage ou sessionStorage
                 localStorage.setItem('token', data.token);
+                // Sauvegarder l'e-mail dans le local storage
+                localStorage.setItem('userEmail', data.user.email); // Utilisation de 'userEmail' au lieu de 'usermail'
+
                 // Rediriger en fonction du type d'utilisateur
                 if (data.user && data.user.userType === 'recruiter') {
                     navigate("/recruiter"); // Rediriger vers la page du recruteur

@@ -15,6 +15,10 @@ import Recruteur from "./components/Videocall";
 import LobbyScreen from "./components/screens/Lobby";
 import RoomPage from "./components/screens/Room";
 import Recording from "./components/Recorder";
+import Offers from "./components/Offers";
+import QuestionReponse from "./components/QuestionReponse";
+import OffersByCategory from "./components/offerparcategorie";
+import OfferQuestions from "./components/ConsulterQuestion";
 
 function App() {
 
@@ -27,7 +31,7 @@ function App() {
 
   const DashboardValid = async () => {
     let token = localStorage.getItem("usersdatatoken");
-    
+
     const res = await fetch("/validuser", {
       method: "GET",
       headers: {
@@ -48,10 +52,10 @@ function App() {
   }
 
   useEffect(() => {
-    setTimeout(()=>{
+    setTimeout(() => {
       DashboardValid();
       setData(true)
-    },2000)
+    }, 2000)
 
   }, [])
 
@@ -67,13 +71,17 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/dash" element={<Dashboard />} />
               <Route path="*" element={<Error />} />
-              <Route path="/video" element={<Video/>}/>
-              <Route path="/candidate" element={<CandidatComponent/>}/>
-              <Route path="/recruiter" /> 
-               <Route path="/record" element={<Recording/>}/>
+              <Route path="/video" element={<Video />} />
+              <Route path="/candidate" element={<CandidatComponent />} />
+              <Route path="/recruiter" />
+              <Route path="/record" element={<Recording />} />
               <Route path="/call" element={<LobbyScreen />} />
-        <Route path="/room/:roomId" element={<RoomPage />} />
-                </Routes>
+              <Route path="/room/:roomId" element={<RoomPage />} />
+              <Route path="/offers" element={<Offers />} />
+              <Route path="/offercategory" element={<OffersByCategory />} />
+              <Route path="/questionsreponses" element={<QuestionReponse />} />
+              <Route path="/Consulterquestion" element={<OfferQuestions />} />
+            </Routes>
           </>
 
         ) : <Box sx={{ display: 'flex', justifyContent: "center", alignItems: "center", height: "100vh" }}>
