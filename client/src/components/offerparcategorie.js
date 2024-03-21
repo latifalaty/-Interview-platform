@@ -5,8 +5,9 @@ const OffersByCategory = () => {
     const [offers, setOffers] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [fileInput, setFileInput] = useState(null);
+    const [successMessage, setSuccessMessage] = useState('');
     const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
-    const userEmail = localStorage.getItem('usermail'); // Récupérez l'e-mail stocké dans le local storage
+    const userEmail = localStorage.getItem('usermail');
 
     useEffect(() => {
         if (selectedCategory) {
@@ -35,24 +36,30 @@ const OffersByCategory = () => {
         try {
             const formData = new FormData();
             formData.append('cv', fileInput);
-            formData.append('email', userEmail); // Ajoutez l'e-mail récupéré du local storage au formulaire de données
-            formData.append('offerId', offerId); // Ajoutez l'ID de l'offre au formulaire de données
+            formData.append('email', userEmail);
+            formData.append('offerId', offerId);
 
             await axios.post(`http://localhost:8009/apply-for-job`, formData);
             console.log("Application submitted successfully:", formData);
 
-            // Réinitialiser le champ d'entrée de fichier après avoir soumis la candidature
+            setSuccessMessage('Application submitted successfully');
             setFileInput(null);
+
+            // Clear success message after 5 seconds
+            setTimeout(() => {
+                setSuccessMessage('');
+            }, 5000);
         } catch (error) {
             console.error("Error applying for job:", error);
         }
     };
 
     return (
-        <div>
-            <h2>Choose a Category</h2>
-            <select value={selectedCategory} onChange={handleCategoryChange}>
-                <option value="">Select Category</option>
+        <div className="container">
+            <h1>Offers</h1>
+            <h2>Choose a domain</h2>
+            <select className="form-select mb-3" value={selectedCategory} onChange={handleCategoryChange}>
+                <option value="">Select domain</option>
                 {categories.map((category, index) => (
                     <option key={index} value={category}>{category}</option>
                 ))}
@@ -60,18 +67,23 @@ const OffersByCategory = () => {
             {selectedCategory && (
                 <>
                     <h2>Offers in {selectedCategory}</h2>
-                    <ul>
+                    <ul className="list-group">
                         {offers.map(offer => (
-                            <li key={offer._id}>
+                            <li key={offer._id} className="list-group-item">
                                 <h3>{offer.title}</h3>
                                 <p>{offer.description}</p>
-                                <p>Salary: ${offer.salary}</p>
+                                <p>Salary: {offer.salary} D</p>
                                 <p>Category: {offer.category}</p>
-                                <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} />
-                                <button onClick={() => handleApply(offer._id)}>Apply</button>
+                                <input type="file" className="form-control mb-2" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} />
+                                <button className="btn btn-primary" onClick={() => handleApply(offer._id)}>Apply</button>
                             </li>
                         ))}
                     </ul>
+                    {successMessage && (
+                        <div className="alert alert-success mt-3" role="alert">
+                            {successMessage}
+                        </div>
+                    )}
                 </>
             )}
         </div>

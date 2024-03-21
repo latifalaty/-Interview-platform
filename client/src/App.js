@@ -19,6 +19,7 @@ import Offers from "./components/Offers";
 import QuestionReponse from "./components/QuestionReponse";
 import OffersByCategory from "./components/offerparcategorie";
 import OfferQuestions from "./components/ConsulterQuestion";
+import Entretien from "./components/entretien";
 
 function App() {
 
@@ -73,11 +74,12 @@ function App() {
               <Route path="*" element={<Error />} />
               <Route path="/video" element={<Video />} />
               <Route path="/candidate" element={<CandidatComponent />} />
-              <Route path="/recruiter" />
+              <Route path="/recruiter" element={<RecruteurComponent/>} />
               <Route path="/record" element={<Recording />} />
               <Route path="/call" element={<LobbyScreen />} />
               <Route path="/room/:roomId" element={<RoomPage />} />
               <Route path="/offers" element={<Offers />} />
+              <Route path="/entretien" element={<Entretien />} />
               <Route path="/offercategory" element={<OffersByCategory />} />
               <Route path="/questionsreponses" element={<QuestionReponse />} />
               <Route path="/Consulterquestion" element={<OfferQuestions />} />

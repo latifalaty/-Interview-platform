@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const QuestionReponse = () => {
@@ -7,6 +8,7 @@ const QuestionReponse = () => {
     const [reponse, setReponse] = useState('');
     const [category, setCategory] = useState('');
     const [editingQuestionId, setEditingQuestionId] = useState(null);
+    const [showForm, setShowForm] = useState(false); // État pour contrôler l'affichage du formulaire
 
     // Liste des catégories disponibles
     const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
@@ -55,23 +57,29 @@ const QuestionReponse = () => {
     return (
         <div className="container mt-5">
             <h1 className="my-4">Manage Questions and Answers</h1>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <input type="text" className="form-control" placeholder="Question" value={question} onChange={(e) => setQuestion(e.target.value)} />
-                </div>
-                <div className="form-group">
-                    <textarea className="form-control" rows="3" placeholder="Answer" value={reponse} onChange={(e) => setReponse(e.target.value)}></textarea>
-                </div>
-                <div className="form-group">
-                    <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
-                        <option value="">Select Category</option>
-                        {categories.map((cat, index) => (
-                            <option key={index} value={cat}>{cat}</option>
-                        ))}
-                    </select>
-                </div>
-                <button type="submit" className="btn btn-primary">{editingQuestionId ? 'Update Question' : 'Add Question'}</button>
-            </form>
+            {!showForm && ( // Affiche le bouton et le formulaire si showForm est false
+                <button className="btn btn-primary mb-4" onClick={() => setShowForm(true)}>Add Question</button>
+            )}
+            {showForm && ( // Affiche le formulaire si showForm est true
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <input type="text" className="form-control" placeholder="Question" value={question} onChange={(e) => setQuestion(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <textarea className="form-control" rows="3" placeholder="Answer" value={reponse} onChange={(e) => setReponse(e.target.value)}></textarea>
+                    </div>
+                    <div className="form-group">
+                        <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
+                            <option value="">Select Category</option>
+                            {categories.map((cat, index) => (
+                                <option key={index} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button type="submit" className="btn btn-primary">{editingQuestionId ? 'Update Question' : 'Add Question'}</button>
+                    <button className="btn btn-secondary ml-2" onClick={() => setShowForm(false)}>Cancel</button> {/* Bouton pour annuler l'ajout de question */}
+                </form>
+            )}
             <ul className="list-group mt-4">
                 {questions.map(question => (
                     <li key={question._id} className="list-group-item">
@@ -80,9 +88,11 @@ const QuestionReponse = () => {
                         <p><strong>Category:</strong> {question.category}</p>
                         <button onClick={() => handleEdit(question)} className="btn btn-primary mr-2">Edit</button>
                         <button onClick={() => handleDelete(question._id)} className="btn btn-danger">Delete</button>
+                 
                     </li>
                 ))}
             </ul>
+            <Link to="/recruiter" className="btn btn-secondary mb-4">Back</Link> 
         </div>
     );
 };

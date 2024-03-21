@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const Offers = () => {
@@ -8,6 +9,7 @@ const Offers = () => {
     const [salary, setSalary] = useState('');
     const [category, setCategory] = useState('');
     const [editingOfferId, setEditingOfferId] = useState(null);
+    const [showForm, setShowForm] = useState(false); // État pour contrôler l'affichage du formulaire
 
     // Liste des catégories disponibles
     const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
@@ -58,26 +60,32 @@ const Offers = () => {
     return (
         <div className="container mt-5">
             <h1 className="my-4">Manage Offers</h1>
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <input type="text" className="form-control" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-                </div>
-                <div className="form-group">
-                    <textarea className="form-control" rows="3" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
-                </div>
-                <div className="form-group">
-                    <input type="number" className="form-control" placeholder="Salary" value={salary} onChange={(e) => setSalary(e.target.value)} />
-                </div>
-                <div className="form-group">
-                    <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
-                        <option value="">Select Category</option>
-                        {categories.map((cat, index) => (
-                            <option key={index} value={cat}>{cat}</option>
-                        ))}
-                    </select>
-                </div>
-                <button type="submit" className="btn btn-primary">{editingOfferId ? 'Update Offer' : 'Add Offer'}</button>
-            </form>
+            {!showForm && ( // Affiche le bouton et le formulaire si showForm est false
+                <button className="btn btn-primary mb-4" onClick={() => setShowForm(true)}>Add Offer</button>
+            )}
+            {showForm && ( // Affiche le formulaire si showForm est true
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <input type="text" className="form-control" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <textarea className="form-control" rows="3" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+                    </div>
+                    <div className="form-group">
+                        <input type="number" className="form-control" placeholder="Salary" value={salary} onChange={(e) => setSalary(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                        <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
+                            <option value="">Select Category</option>
+                            {categories.map((cat, index) => (
+                                <option key={index} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button type="submit" className="btn btn-primary">{editingOfferId ? 'Update Offer' : 'Add Offer'}</button>
+                    <button className="btn btn-secondary ml-2" onClick={() => setShowForm(false)}>Cancel</button> {/* Bouton pour annuler l'ajout d'offre */}
+                </form>
+            )}
             <ul className="list-group mt-4">
                 {offers.map(offer => (
                     <li key={offer._id} className="list-group-item">
@@ -87,9 +95,11 @@ const Offers = () => {
                         <p>Category: {offer.category}</p>
                         <button onClick={() => handleEdit(offer)} className="btn btn-primary mr-2">Edit</button>
                         <button onClick={() => handleDelete(offer._id)} className="btn btn-danger">Delete</button>
+                        
                     </li>
                 ))}
             </ul>
+            <Link to="/recruiter" className="btn btn-secondary mb-4">Back</Link> 
         </div>
     );
 };

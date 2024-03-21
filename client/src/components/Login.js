@@ -55,7 +55,6 @@ const Login = () => {
                 <div className="form_data">
                     <div className="form_heading">
                         <h1>Login</h1>
-                        <h2>Welcome back to the Mern app</h2>
                     </div>
 
                     <form>

@@ -1,9 +1,9 @@
 import React, { useEffect, useCallback, useState } from "react";
 import ReactPlayer from "react-player";
+import RecordRTC from "recordrtc";
 import peer from "../service/peer";
 import { useSocket } from "../context/SocketProvider";
 import Video from "../Video";
-import Recording from "../Recorder";
 import { Link } from 'react-router-dom';
 
 const RoomPage = () => {
@@ -12,6 +12,8 @@ const RoomPage = () => {
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [isConnected, setIsConnected] = useState(false);
+  const [recorder, setRecorder] = useState(null);
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState(null); // Nouvel état pour stocker le fichier vidéo enregistré
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
@@ -20,12 +22,70 @@ const RoomPage = () => {
   }, []);
 
   const handleDisconnect = useCallback(() => {
-    // Actions à effectuer lors de la déconnexion
-    setMyStream(null);
-    setRemoteSocketId(null);
-    setIsConnected(false);
-    // Autres actions de nettoyage peuvent être ajoutées ici
+  
+    // Arrêter l'enregistrement si en cours
+    if (recorder) {
+      recorder.stopRecording(() => {
+        setRecordedVideoBlob(recorder.getBlob()); // Récupérer le blob du fichier enregistré
+      //  recorder.save(); // Télécharger l'enregistrement
+      alert("sucess!");
+      });
+    }
+
+  }, [recorder]);
+
+  const handleRecordScreen = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { mediaSource: "screen" },
+        audio: true
+      });
+  
+      // Obtenez une liste des périphériques audio disponibles
+      const devices = await navigator.mediaDevices.enumerateDevices();
+  
+      // Recherchez le périphérique audio externe (par exemple, une entrée de ligne)
+      const externalAudioDevice = devices.find(device => device.kind === 'audioinput' && device.label !== 'Default');
+  
+      // Si un périphérique audio externe est trouvé, utilisez-le pour le flux audio
+      if (externalAudioDevice) {
+        const constraints = {
+          audio: {
+            deviceId: { exact: externalAudioDevice.deviceId },
+          },
+        };
+  
+        // Obtenez le flux audio à partir du périphérique externe
+        const externalAudioStream = await navigator.mediaDevices.getUserMedia(constraints);
+  
+        // Combinez le flux vidéo avec le flux audio externe
+        const combinedStream = new MediaStream([...stream.getTracks(), ...externalAudioStream.getTracks()]);
+  
+        const recorder = RecordRTC(combinedStream, { type: "video" });
+        recorder.startRecording();
+        setRecorder(recorder);
+      } else {
+        console.log("No external audio device found");
+      }
+    } catch (error) {
+      console.error("Error accessing media devices: ", error);
+    }
   }, []);
+  
+
+  const handleDownloadRecord = useCallback(() => {
+    if (recordedVideoBlob) {
+      const url = URL.createObjectURL(recordedVideoBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = 'recorded_screen.mp4';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }
+  }, [recordedVideoBlob]);
 
   const handleCallUser = useCallback(async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -36,7 +96,7 @@ const RoomPage = () => {
     socket.emit("user:call", { to: remoteSocketId, offer });
     setMyStream(stream);
   }, [remoteSocketId, socket]);
-
+  
   const handleIncommingCall = useCallback(
     async ({ from, offer }) => {
       setRemoteSocketId(from);
@@ -128,17 +188,19 @@ const RoomPage = () => {
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
   ]);
+
   return (
     <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr" }}>
+      <h2>welcome to the room</h2>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
         {/* Affichage de la vidéo distante */}
-        {remoteStream && (
+        {remoteStream && remoteStream instanceof MediaStream && (
           <div>
             <h1>Remote Stream</h1>
             <Video muted url={remoteStream}/>
           </div>
         )}
-        
+      
         {/* Affichage de la vidéo locale */}
         {myStream && (
           <div>
@@ -148,7 +210,7 @@ const RoomPage = () => {
               muted
               height="80%"  // Augmentation de la hauteur à 60%
               width="100%" // Utilisation de toute la largeur disponible
-              url={myStream}
+              url={myStream} // Assurez-vous que myStream est une URL valide ici
             />
           </div>
         )}
@@ -170,26 +232,15 @@ const RoomPage = () => {
             }} 
             onClick={handleDisconnect}
           >
-            Disconnect
+          Stop recording
           </button>
   
           <button 
-            style={{ 
-              padding: "10px 20px", 
-              fontSize: "20px", 
-              backgroundColor: "#dc3545", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: "5px", 
-              cursor: "pointer",
-              marginRight: "10px"
-            }}  
             onClick={sendStreams}
           >
-            Send Streams
           </button>
   
-          {remoteSocketId && 
+          {remoteSocketId  && 
             <button 
               style={{ 
                 padding: "10px 20px", 
@@ -207,12 +258,48 @@ const RoomPage = () => {
             </button>
           }
         </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "0px" }}>
+          {/* Bouton d'enregistrement */}
+          <div style={{ marginBottom: "20px" }}>
+            <button 
+              style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#28a745", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }} 
+              onClick={handleRecordScreen}
+            >
+              Record
+            </button>
+          </div>
+
+          {/* Bouton de téléchargement */}
+          <div style={{ marginBottom: "20px" }}>
+            <button 
+              style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#007bff", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }} 
+              onClick={handleDownloadRecord}
+            >
+              Download
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
-  
-  
-  
 };
 
 export default RoomPage;
