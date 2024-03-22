@@ -1,9 +1,12 @@
 import React, { useEffect, useCallback, useState } from "react";
+
+import { useReactMediaRecorder } from "react-media-recorder";
 import ReactPlayer from "react-player";
 import RecordRTC from "recordrtc";
 import peer from "../service/peer";
 import { useSocket } from "../context/SocketProvider";
 import Video from "../Video";
+
 import { Link } from 'react-router-dom';
 
 const RoomPage = () => {
@@ -12,9 +15,23 @@ const RoomPage = () => {
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [isConnected, setIsConnected] = useState(false);
+  
+  const videoRecorder = useReactMediaRecorder({ video: true, audio: true });
+  
+  const [mediaUrl, setMediaurl] = useState("");
   const [recorder, setRecorder] = useState(null);
   const [recordedVideoBlob, setRecordedVideoBlob] = useState(null); // Nouvel état pour stocker le fichier vidéo enregistré
+  const recordVideo = useCallback(() => {
+    videoRecorder.startRecording();
+    alert("recording started");
+  }, [videoRecorder]);
 
+  const stopRecording = () => {
+      videoRecorder.stopRecording();
+      setMediaurl(videoRecorder.mediaBlobUrl);
+      alert("record stopped")
+ 
+  };
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
     setRemoteSocketId(id);
@@ -71,6 +88,7 @@ const RoomPage = () => {
       console.error("Error accessing media devices: ", error);
     }
   }, []);
+  
   
 
   const handleDownloadRecord = useCallback(() => {
@@ -216,7 +234,7 @@ const RoomPage = () => {
         )}
       </div>
   
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
+      <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr" }}>
         {/* Boutons de déconnexion */}
         <div style={{ marginBottom: "20px" }}>
         {remoteSocketId  && myStream &&
@@ -233,7 +251,7 @@ const RoomPage = () => {
             }} 
             onClick={handleDisconnect}
           >
-          Stop recording
+          Stop recording screen
           </button>}
   
           <button 
@@ -276,10 +294,47 @@ const RoomPage = () => {
               }} 
               onClick={handleRecordScreen}
             >
-              Record
+              Record screen
             </button>
           </div>
-
+          <div style={{ marginBottom: "20px" }}>
+          <button style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#007bff", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }}   onClick={recordVideo}>
+            <span> Video Recording</span>
+          </button></div>
+          <div style={{ marginBottom: "20px" }}>
+          <button style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#007bff", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }}  onClick={stopRecording}>
+          <span>Stop Recording</span>
+        </button></div>
+        <a className="download-href" href={mediaUrl} download="video.mp4">
+              <button style={{ 
+                padding: "10px 20px", 
+                fontSize: "20px", 
+                backgroundColor: "#007bff", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "5px", 
+                cursor: "pointer",
+                marginRight: "10px"
+              }} >Download video</button>
+            </a>
           {/* Bouton de téléchargement */}
           <div style={{ marginBottom: "20px" }}>
             <button 
@@ -295,10 +350,12 @@ const RoomPage = () => {
               }} 
               onClick={handleDownloadRecord}
             >
-              Download
+              Download screen
             </button>
           </div>
+          
         </div>}
+        
       </div>
     </div>
   );
