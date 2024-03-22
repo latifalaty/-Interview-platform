@@ -28,7 +28,7 @@ const RoomPage = () => {
       recorder.stopRecording(() => {
         setRecordedVideoBlob(recorder.getBlob()); // Récupérer le blob du fichier enregistré
       //  recorder.save(); // Télécharger l'enregistrement
-      alert("sucess!");
+      alert(" record sucess!");
       });
     }
 
@@ -197,7 +197,7 @@ const RoomPage = () => {
         {remoteStream && remoteStream instanceof MediaStream && (
           <div>
             <h1>Remote Stream</h1>
-            <Video muted url={remoteStream}/>
+            <Video  url={remoteStream}/>
           </div>
         )}
       
@@ -219,6 +219,7 @@ const RoomPage = () => {
       <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
         {/* Boutons de déconnexion */}
         <div style={{ marginBottom: "20px" }}>
+        {remoteSocketId  && myStream &&
           <button 
             style={{ 
               padding: "10px 20px", 
@@ -233,7 +234,7 @@ const RoomPage = () => {
             onClick={handleDisconnect}
           >
           Stop recording
-          </button>
+          </button>}
   
           <button 
             onClick={sendStreams}
@@ -258,6 +259,7 @@ const RoomPage = () => {
             </button>
           }
         </div>
+        {remoteSocketId  && myStream &&
         <div style={{ display: "flex", justifyContent: "center", marginTop: "0px" }}>
           {/* Bouton d'enregistrement */}
           <div style={{ marginBottom: "20px" }}>
@@ -296,7 +298,7 @@ const RoomPage = () => {
               Download
             </button>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
