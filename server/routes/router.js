@@ -12,6 +12,7 @@ const QuestionReponse = require('../models/QuestionReponse');
 const multer = require('multer');
 const Applicant = require("../models/Applicant");
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Register route
 router.post("/register", async (req, res) => {
@@ -328,5 +329,39 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+router.post('/analyse', upload.single('video'), (req, res) => {
+    const videoPath = req.file.path;
+    let extractedText = ''; // Buffer pour stocker le texte extrait
+    let responseSent = false; // Variable de contrôle pour s'assurer que la réponse n'est envoyée qu'une seule fois
+  
+    const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoPath]);
+  
+    pythonProcess.stdout.on('data', (data) => {
+      extractedText += data.toString(); // Ajoute les données à la variable
+    });
+  
+    pythonProcess.stderr.on('data', (data) => {
+      console.error('Error:', data.toString());
+      if (!responseSent) {
+        res.status(500).send('Error extracting text from audio');
+        responseSent = true; // Met à jour la variable de contrôle
+      }
+    });
+  
+    pythonProcess.on('close', () => {
+      console.log('Extracted Text:', extractedText);
+      if (!responseSent) {
+        res.send(extractedText); // Envoie la réponse une seule fois
+        responseSent = true; // Met à jour la variable de contrôle
+      }
+    });
+  });
+  
+  
+  
+
+
+  
 
 module.exports = router;
