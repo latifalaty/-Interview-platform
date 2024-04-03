@@ -23,8 +23,17 @@ const Analyse = () => {
           'Content-Type': 'multipart/form-data' // Ensure correct content type for file upload
         }
       });
+
       console.log('File uploaded successfully');
       console.log('Extracted Text:', response.data);
+      
+      // Download the extracted text as a file
+      const element = document.createElement("a");
+      const file = new Blob([response.data], {type: 'text/plain'});
+      element.href = URL.createObjectURL(file);
+      element.download = "extracted_text.txt";
+      document.body.appendChild(element);
+      element.click();
     } catch (error) {
       console.error('Error uploading file:', error);
     }

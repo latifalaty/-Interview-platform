@@ -11,6 +11,7 @@ const Offer = require('../models/Offer');
 const QuestionReponse = require('../models/QuestionReponse');
 const multer = require('multer');
 const Applicant = require("../models/Applicant");
+const VideoRecord = require("../models/Video");
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -356,6 +357,22 @@ router.post('/analyse', upload.single('video'), (req, res) => {
         responseSent = true; // Met à jour la variable de contrôle
       }
     });
+  });
+ // Route pour enregistrer la vidéo
+router.post('/api/video-record', async (req, res) => {
+    const { email, videoUrl } = req.body;
+  
+    try {
+      const newRecord = new VideoRecord({
+        email,
+        videoUrl,
+      });
+      await newRecord.save();
+      res.status(201).json({ message: 'Video record saved successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
   });
   
   

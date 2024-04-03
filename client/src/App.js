@@ -20,6 +20,7 @@ import QuestionReponse from "./components/QuestionReponse";
 import OffersByCategory from "./components/offerparcategorie";
 import OfferQuestions from "./components/ConsulterQuestion";
 import Entretien from "./components/entretien";
+import Analyse from "./components/Analyse";
 
 function App() {
 
@@ -83,6 +84,7 @@ function App() {
               <Route path="/offercategory" element={<OffersByCategory />} />
               <Route path="/questionsreponses" element={<QuestionReponse />} />
               <Route path="/Consulterquestion" element={<OfferQuestions />} />
+              <Route path="/analyse" element={<Analyse/>} />
             </Routes>
           </>
 
