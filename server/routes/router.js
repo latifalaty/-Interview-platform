@@ -12,6 +12,7 @@ const QuestionReponse = require('../models/QuestionReponse');
 const multer = require('multer');
 const Applicant = require("../models/Applicant");
 const VideoRecord = require("../models/Video");
+const CandidateData = require('../models/CandidateData');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -331,33 +332,55 @@ router.get('/questions/:category', async (req, res) => {
     }
 });
 
-router.post('/analyse', upload.single('video'), (req, res) => {
+router.post('/analyse', upload.single('video'), async (req, res) => {
     const videoPath = req.file.path;
-    let extractedText = ''; // Buffer pour stocker le texte extrait
-    let responseSent = false; // Variable de contrôle pour s'assurer que la réponse n'est envoyée qu'une seule fois
-  
+    const candidateEmail = req.body.email;
+    let extractedText = '';
+    let responseSent = false;
+
     const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoPath]);
-  
-    pythonProcess.stdout.on('data', (data) => {
-      extractedText += data.toString(); // Ajoute les données à la variable
+    pythonProcess.stdout.on('data', async (data) => {
+        extractedText += data.toString();
+        console.log('Extracted Text:', extractedText);
+    
+        // Enregistrer les données dans la base de données directement après l'extraction du texte
+        if (!responseSent && extractedText.includes('Texte extrait:')) { // Vérifier si le texte extrait est disponible
+            try {
+                const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
+                const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
+
+                const candidateData = new CandidateData({
+                    email: candidateEmail,
+                    extractedText: extractedTextContent // Utiliser le texte extrait réel pour enregistrement
+                });
+                console.log('Candidate Data:', candidateData); // Logging candidateData
+                await candidateData.save();
+                res.status(200).json({ extracted_text: extractedTextContent });
+                responseSent = true; // Mettre à jour pour éviter l'envoi multiple de la réponse
+            } catch (error) {
+                console.error('Error saving data:', error);
+                if (!responseSent) {
+                    res.status(500).send('Error saving data.');
+                    responseSent = true; // Assurez-vous que la réponse est envoyée même en cas d'erreur
+                }
+            }
+        }
     });
-  
-    pythonProcess.stderr.on('data', (data) => {
-      console.error('Error:', data.toString());
-      if (!responseSent) {
-        res.status(500).send('Error extracting text from audio');
-        responseSent = true; // Met à jour la variable de contrôle
-      }
+    
+
+    pythonProcess.on('close', (code) => {
+        if (code !== 0 && !responseSent) {
+            console.error('Python process closed with non-zero exit code:', code);
+            res.status(500).send('Error extracting text from audio');
+            responseSent = true; // Mettre à jour pour éviter l'envoi multiple de la réponse
+        }
     });
-  
-    pythonProcess.on('close', () => {
-      console.log('Extracted Text:', extractedText);
-      if (!responseSent) {
-        res.send(extractedText); // Envoie la réponse une seule fois
-        responseSent = true; // Met à jour la variable de contrôle
-      }
-    });
-  });
+});
+
+
+
+
+
  // Route pour enregistrer la vidéo
 router.post('/api/video-record', async (req, res) => {
     const { email, videoUrl } = req.body;
