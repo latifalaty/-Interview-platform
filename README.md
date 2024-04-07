@@ -1,4 +1,5 @@
-platforme entretien in MERN stack and python
+On like Intrview platform in MERN stack and python
+with emotion detection , online call , candidate classification , voice recognition , video analysis
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
