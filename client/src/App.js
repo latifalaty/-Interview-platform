@@ -21,6 +21,7 @@ import OffersByCategory from "./components/offerparcategorie";
 import OfferQuestions from "./components/ConsulterQuestion";
 import Entretien from "./components/entretien";
 import Analyse from "./components/Analyse";
+import InterviewForm from "./components/context/InterviewForm";
 
 function App() {
 
@@ -85,6 +86,7 @@ function App() {
               <Route path="/questionsreponses" element={<QuestionReponse />} />
               <Route path="/Consulterquestion" element={<OfferQuestions />} />
               <Route path="/analyse" element={<Analyse/>} />
+              <Route path="/makeinterview" element={<InterviewForm/>} />
             </Routes>
           </>
 

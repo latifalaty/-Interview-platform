@@ -13,6 +13,8 @@ const multer = require('multer');
 const Applicant = require("../models/Applicant");
 const VideoRecord = require("../models/Video");
 const CandidateData = require('../models/CandidateData');
+const Interview = require('../models/Interview');
+
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -331,7 +333,7 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
+//analyser video
 router.post('/analyse', upload.single('video'), async (req, res) => {
     const videoPath = req.file.path;
     const candidateEmail = req.body.email;
@@ -376,8 +378,18 @@ router.post('/analyse', upload.single('video'), async (req, res) => {
         }
     });
 });
-
-
+//make interview
+router.post('/schedule', async (req, res) => {
+    try {
+      const { date, link } = req.body;
+      const interview = new Interview({ date, link });
+      await interview.save();
+      res.status(201).json({ message: 'Interview scheduled successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Failed to schedule interview' });
+    }
+  });
 
 
 
