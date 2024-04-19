@@ -22,6 +22,8 @@ import OfferQuestions from "./components/ConsulterQuestion";
 import Entretien from "./components/entretien";
 import Analyse from "./components/Analyse";
 import InterviewForm from "./components/context/InterviewForm";
+import ApplicantsList from "./components/Applicantslist";
+import ApplicantAnalysis from "./components/Aplicantanalysis";
 
 function App() {
 
@@ -70,6 +72,8 @@ function App() {
             <Header />
 
             <Routes>
+            <Route path="/applicantanalysis" element={<ApplicantAnalysis />} />
+            <Route path="/applicantlist" element={<ApplicantsList />} />
               <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/dash" element={<Dashboard />} />

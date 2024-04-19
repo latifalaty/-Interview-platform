@@ -14,7 +14,6 @@ const Applicant = require("../models/Applicant");
 const VideoRecord = require("../models/Video");
 const CandidateData = require('../models/CandidateData');
 const Interview = require('../models/Interview');
-
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -289,7 +288,7 @@ router.post('/apply-for-job', upload.single('cv'), async (req, res) => {
         const applicant = new Applicant({
             email, // Utilisez l'e-mail de l'utilisateur
             offerId,
-            cv: req.file.filename // Utilisez simplement le nom du fichier, pas l'URL complète
+            cv: 'http://127.0.0.1:8009/' + req.file.filename // Utilisez simplement le nom du fichier, pas l'URL complète
         });
 
         await applicant.save();
@@ -391,8 +390,6 @@ router.post('/schedule', async (req, res) => {
     }
   });
 
-
-
  // Route pour enregistrer la vidéo
 router.post('/api/video-record', async (req, res) => {
     const { email, videoUrl } = req.body;
@@ -410,9 +407,75 @@ router.post('/api/video-record', async (req, res) => {
     }
   });
   
-  
-  
+// Fonction pour extraire les données à partir d'un fichier (PDF ou image) en utilisant le script Python
+function extractDataFromFile(fileType, filePath) {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python', ['D:/platforme entretien/server/Analysecv/extract_data.py', fileType, filePath]);
 
+        let data = '';
+        pythonProcess.stdout.on('data', (chunk) => {
+            data += chunk.toString();
+        });
+
+        pythonProcess.stderr.on('data', (err) => {
+            reject(err.toString());
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve(JSON.parse(data)); // Parse le résultat JSON extrait
+            } else {
+                reject(`Python process exited with code ${code}`);
+            }
+        });
+    });
+}
+
+// Route pour analyser tous les CV des candidats
+router.get('/analyze-applicants', async (req, res) => {
+    try {
+        const applicants = await Applicant.find();
+        const analysisResults = [];
+
+        for (const applicant of applicants) {
+            const fileType = applicant.cv.split('.').pop(); // Obtenir l'extension du fichier
+            let extractedData;
+
+            if (fileType === 'pdf' || fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg') {
+                const outputDir = path.join(__dirname, 'extracted_faces'); // Répertoire de sortie pour les fichiers extraits
+                extractedData = await extractDataFromFile(fileType, applicant.cv, outputDir);
+            }
+
+            // Organiser les données extraites en sections
+            const organizedData = {
+                applicantId: applicant._id,
+                extractedText: {},
+                extractedFaces: extractedData.extracted_faces
+            };
+
+            // Parcourir chaque section du texte extrait et l'organiser
+            for (const [sectionTitle, sectionText] of Object.entries(extractedData.extracted_text)) {
+                organizedData.extractedText[sectionTitle] = sectionText;
+            }
+
+            analysisResults.push(organizedData);
+        }
+
+        res.status(200).json({ message: 'Applicants analyzed successfully', data: analysisResults });
+    } catch (error) {
+        console.error('Error analyzing applicants:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+//affichage applicant
+router.get('/applicants', async (req, res) => {
+    try {
+      const applicants = await Applicant.find();
+      res.json(applicants);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
   
 
