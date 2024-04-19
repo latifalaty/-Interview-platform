@@ -13,10 +13,16 @@ from PIL import Image
 STATIC_FOLDER = "static"
 
 def download_pdf_from_url(pdf_url):
-    response = requests.get(pdf_url)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
-        f.write(response.content)
-        return f.name
+    try:
+        response = requests.get(pdf_url)
+        response.raise_for_status()  # Lève une exception pour les codes d'erreur HTTP
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as f:
+            f.write(response.content)
+            return f.name
+    except requests.RequestException as e:
+        print(f"Error downloading PDF from URL: {e}")
+        return None
+
 
 def extract_text_from_pdf(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
@@ -31,12 +37,12 @@ def extract_text_from_image(image_path):
 
 def extract_face_from_pdf(pdf_path, output_dir):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    
+
     extracted_faces_paths = []  # Liste pour stocker les chemins des fichiers PNG extraits
-    
+
     # Ouvrez le PDF
     pdf_document = fitz.open(pdf_path)
-    
+
     for page_num in range(pdf_document.page_count):
         page = pdf_document.load_page(page_num)
         # Convertissez la page PDF en image au format RGB
@@ -44,12 +50,12 @@ def extract_face_from_pdf(pdf_path, output_dir):
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         # Convertissez l'image en tableau numpy
         img_np = np.array(img)
-        
+
         # Convertissez l'image en niveau de gris
         gray = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY)
         # Détection des visages
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-        
+
         # Dessinez une boîte autour de chaque visage détecté et enregistrez-le en tant que fichier PNG
         for i, (x, y, w, h) in enumerate(faces):
             cv2.rectangle(img_np, (x, y), (x+w, y+h), (0, 255, 0), 2)
@@ -60,7 +66,7 @@ def extract_face_from_pdf(pdf_path, output_dir):
             face_path = os.path.join(output_dir, face_filename)
             face_img.save(face_path)
             extracted_faces_paths.append(face_filename)
-    
+
     return extracted_faces_paths
 
 def extract_face_from_image(image_path):
@@ -68,12 +74,12 @@ def extract_face_from_image(image_path):
     image = cv2.imread(image_path)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-    
+
     extracted_faces = []
     for (x, y, w, h) in faces:
         face = image[y:y+h, x:x+w]
         extracted_faces.append(face.tolist())  # Convertir le tableau numpy en liste
-    
+
     return extracted_faces
 
 if __name__ == "__main__":
@@ -81,19 +87,20 @@ if __name__ == "__main__":
     file_path = sys.argv[2]
 
     extracted_faces = []  # Initialisation de la variable extracted_faces
-    
-    if file_type == 'pdf':
-        if file_path.startswith('http://') or file_path.startswith('https://'):
-            file_path = download_pdf_from_url(file_path)
-        extracted_text = extract_text_from_pdf(file_path)
-        output_dir = os.path.join(STATIC_FOLDER, "extracted_faces")  # Répertoire de sortie pour les fichiers PNG extraits
-        os.makedirs(output_dir, exist_ok=True)  # Créer le répertoire s'il n'existe pas
-        extracted_faces = extract_face_from_pdf(file_path, output_dir)
-    elif file_type in ['png', 'jpg', 'jpeg']:
-        extracted_text = extract_text_from_image(file_path)
-        output_dir = "./extracted_faces"  # Répertoire de sortie pour les fichiers PNG extraits
-        extracted_faces = extract_face_from_image(file_path, output_dir)
-    
+if file_type == 'pdf':
+    if file_path.startswith('http://') or file_path.startswith('https://'):
+        file_path = download_pdf_from_url(file_path)
+        if file_path is None:
+            print("Error downloading PDF from URL. Exiting.")
+            sys.exit(1)  # Quitte le programme avec un code d'erreur
+    extracted_text = extract_text_from_pdf(file_path)
+    if extracted_text is None:
+        print("Error extracting text from PDF. Exiting.")
+        sys.exit(1)  # Quitte le programme avec un code d'erreur
+    output_dir = os.path.join(STATIC_FOLDER, "extracted_faces")
+    os.makedirs(output_dir, exist_ok=True)
+    extracted_faces = extract_face_from_pdf(file_path, output_dir)
+
     # Format des chemins relatifs pour les fichiers images
     extracted_faces = [os.path.join("extracted_faces", filename) for filename in extracted_faces]
 

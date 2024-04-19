@@ -406,11 +406,10 @@ router.post('/api/video-record', async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
   });
-  
 // Fonction pour extraire les données à partir d'un fichier (PDF ou image) en utilisant le script Python
-function extractDataFromFile(fileType, filePath) {
+function extractDataFromFile(fileType, filePath, outputDir) {
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', ['D:/platforme entretien/server/Analysecv/extract_data.py', fileType, filePath]);
+        const pythonProcess = spawn('python', ['D:/platforme entretien/server/Analysecv/extract_data.py', fileType, filePath, outputDir]); // Ajouter outputDir comme argument
 
         let data = '';
         pythonProcess.stdout.on('data', (chunk) => {
@@ -423,7 +422,13 @@ function extractDataFromFile(fileType, filePath) {
 
         pythonProcess.on('close', (code) => {
             if (code === 0) {
-                resolve(JSON.parse(data)); // Parse le résultat JSON extrait
+                try {
+                    // Convertir les données extraites de la chaîne JSON en objet JavaScript
+                    const extractedData = JSON.parse(data);
+                    resolve(extractedData);
+                } catch (parseError) {
+                    reject('Error parsing extracted data: ' + parseError.message);
+                }
             } else {
                 reject(`Python process exited with code ${code}`);
             }
@@ -439,9 +444,9 @@ router.get('/analyze-applicants', async (req, res) => {
 
         for (const applicant of applicants) {
             const fileType = applicant.cv.split('.').pop(); // Obtenir l'extension du fichier
-            let extractedData;
+            let extractedData = { extracted_text: {}, extracted_faces: [] }; // Initialiser les données extraites
 
-            if (fileType === 'pdf' || fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg') {
+            if (['pdf', 'png', 'jpg', 'jpeg'].includes(fileType)) { // Vérifier si le type de fichier est pris en charge
                 const outputDir = path.join(__dirname, 'extracted_faces'); // Répertoire de sortie pour les fichiers extraits
                 extractedData = await extractDataFromFile(fileType, applicant.cv, outputDir);
             }
@@ -449,14 +454,9 @@ router.get('/analyze-applicants', async (req, res) => {
             // Organiser les données extraites en sections
             const organizedData = {
                 applicantId: applicant._id,
-                extractedText: {},
-                extractedFaces: extractedData.extracted_faces
+                extractedText: extractedData.extracted_text || {}, // Utiliser un objet vide par défaut
+                extractedFaces: extractedData.extracted_faces || [] // Utiliser un tableau vide par défaut
             };
-
-            // Parcourir chaque section du texte extrait et l'organiser
-            for (const [sectionTitle, sectionText] of Object.entries(extractedData.extracted_text)) {
-                organizedData.extractedText[sectionTitle] = sectionText;
-            }
 
             analysisResults.push(organizedData);
         }
