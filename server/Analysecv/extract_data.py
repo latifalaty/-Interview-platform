@@ -102,7 +102,7 @@ if file_type == 'pdf':
     extracted_faces = extract_face_from_pdf(file_path, output_dir)
 
     # Format des chemins relatifs pour les fichiers images
-    extracted_faces = [os.path.join("extracted_faces", filename) for filename in extracted_faces]
+    extracted_faces_links = [os.path.join("static", "extracted_faces", filename) for filename in extracted_faces]
 
 
     # Organiser le texte extrait en sections distinctes
@@ -113,4 +113,5 @@ if file_type == 'pdf':
         end_index = extracted_text.find(section_titles[section_titles.index(title) + 1]) if section_titles.index(title) < len(section_titles) - 1 else len(extracted_text)
         sections[title] = extracted_text[start_index:end_index].strip() if start_index != -1 else ""
 
-    print(json.dumps({"extracted_text": sections, "extracted_faces": extracted_faces}, indent=4))
+    
+    print(json.dumps({"extracted_text": sections, "extracted_faces_links": extracted_faces_links}, indent=4))

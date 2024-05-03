@@ -1,33 +1,49 @@
+import subprocess
+import os
+import sys
+import json
 import moviepy.editor as mp
 import speech_recognition as sr
-import sys
-import os
-import json
+
+def convert_video(input_file, output_file):
+    try:
+        subprocess.run(['ffmpeg', '-i', input_file, '-c:v', 'libx264', '-c:a', 'aac', '-strict', 'experimental', output_file], check=True)
+       
+        return output_file
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur lors de la conversion: {e}")
+    except Exception as e:
+        print(f"Une erreur s'est produite: {str(e)}")
+    return None
 
 def extract_text_from_audio(audio_file):
     try:
-        # Convertir la vidéo en audio
-        audio = mp.AudioFileClip(audio_file)
+        video_file = convert_video(audio_file, "output_video.mp4")
+        audio = mp.AudioFileClip(video_file)
         audio.write_audiofile("output_audio.wav", codec='pcm_s16le')
 
         # Utiliser SpeechRecognition pour transcrire l'audio en texte
         recognizer = sr.Recognizer()
         with sr.AudioFile("output_audio.wav") as source:
             audio_data = recognizer.record(source)
-            # Utiliser le modèle de reconnaissance de la parole
-            # dans une langue spécifique (par exemple, 'fr-FR' pour le français)
             text = recognizer.recognize_google(audio_data, language='fr-FR')
-            return text
+            
+        return text
     except sr.UnknownValueError:
         print("Erreur: Impossible de reconnaître le discours")
     except sr.RequestError as e:
         print(f"Erreur: La demande de reconnaissance a échoué; {e}")
     except Exception as e:
         print(f"Une erreur s'est produite: {str(e)}")
+    finally:
+        # Supprimer les fichiers temporaires
+        if 'video_file' in locals():
+            os.remove(video_file)
+        if os.path.exists("output_audio.wav"):
+            os.remove("output_audio.wav")
     return None
 
 if __name__ == "__main__":
-    # Vérifier si le chemin du fichier audio est fourni en argument de ligne de commande
     if len(sys.argv) != 2:
         print("Usage: python extract_audio_and_text.py <audio_file>")
         sys.exit(1)

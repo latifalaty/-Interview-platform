@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const OffersByCategory = () => {
+const OffersByDomain = () => {
     const [offers, setOffers] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedDomain, setSelectedDomain] = useState('');
     const [fileInput, setFileInput] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
-    const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
+    const domains = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
     const userEmail = localStorage.getItem('usermail');
 
     useEffect(() => {
-        if (selectedCategory) {
-            fetchOffersByCategory(selectedCategory);
+        if (selectedDomain) {
+            fetchOffersByDomain(selectedDomain);
         }
-    }, [selectedCategory]);
+    }, [selectedDomain]);
 
-    const fetchOffersByCategory = async (category) => {
+    const fetchOffersByDomain = async (domain) => {
         try {
-            const response = await axios.get(`http://localhost:8009/offers/${category}`);
+            const response = await axios.get(`http://localhost:8009/offers/${domain}`);
             setOffers(response.data);
         } catch (error) {
-            console.error("Error fetching offers by category:", error);
+            console.error("Error fetching offers by domain:", error);
         }
     };
 
-    const handleCategoryChange = (e) => {
-        setSelectedCategory(e.target.value);
+    const handleDomainChange = (e) => {
+        setSelectedDomain(e.target.value);
     };
 
     const handleFileChange = (e) => {
@@ -58,22 +58,23 @@ const OffersByCategory = () => {
         <div className="container">
             <h1>Offers</h1>
             <h2>Choose a domain</h2>
-            <select className="form-select mb-3" value={selectedCategory} onChange={handleCategoryChange}>
+            <select className="form-select mb-3" value={selectedDomain} onChange={handleDomainChange}>
                 <option value="">Select domain</option>
-                {categories.map((category, index) => (
-                    <option key={index} value={category}>{category}</option>
+                {domains.map((domain, index) => (
+                    <option key={index} value={domain}>{domain}</option>
                 ))}
             </select>
-            {selectedCategory && (
+            {selectedDomain && (
                 <>
-                    <h2>Offers in {selectedCategory}</h2>
+                    <h2>Offers in {selectedDomain}</h2>
                     <ul className="list-group">
                         {offers.map(offer => (
                             <li key={offer._id} className="list-group-item">
                                 <h3>{offer.title}</h3>
                                 <p>{offer.description}</p>
                                 <p>Salary: {offer.salary} D</p>
-                                <p>Category: {offer.category}</p>
+                                <p>Domain: {offer.domain}</p>
+                                <p>To apply send your CV here :</p>
                                 <input type="file" className="form-control mb-2" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileChange} />
                                 <button className="btn btn-primary" onClick={() => handleApply(offer._id)}>Apply</button>
                             </li>
@@ -90,4 +91,4 @@ const OffersByCategory = () => {
     );
 };
 
-export default OffersByCategory;
+export default OffersByDomain;

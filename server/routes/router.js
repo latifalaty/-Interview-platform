@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const userdb = require("../models/userSchema");
 const bcrypt = require("bcryptjs");
+const fs = require('fs');
+const { SpeechClient } = require('@google-cloud/speech');
+const fetch = require('node-fetch');
 const authenticate = require("../middleware/authenticate");
 const emotions = require("../middleware/emotiondetector");
 const { io } = require("../middleware/videocall");
@@ -16,6 +19,7 @@ const CandidateData = require('../models/CandidateData');
 const Interview = require('../models/Interview');
 const path = require('path');
 const { spawn } = require('child_process');
+const AnalysedVideo = require("../models/Analysedvideo");
 
 // Register route
 router.post("/register", async (req, res) => {
@@ -165,13 +169,13 @@ router.get('/alloffers', async (req, res) => {
 
 // Create an offer
 router.post('/createoffer', async (req, res) => {
-    const { title, description, salary, category } = req.body;
+    const { title, description, salary, domain } = req.body;
 
     const offer = new Offer({
         title,
         description,
         salary,
-        category
+        domain
     });
 
     try {
@@ -184,9 +188,9 @@ router.post('/createoffer', async (req, res) => {
 
 // Update an offer
 router.put('/api/offers/:id', async (req, res) => {
-    const { title, description, salary, category } = req.body;
+    const { title, description, salary, domain } = req.body;
     try {
-        const updatedOffer = await Offer.findByIdAndUpdate(req.params.id, { title, description, salary, category }, { new: true });
+        const updatedOffer = await Offer.findByIdAndUpdate(req.params.id, { title, description, salary, domain }, { new: true });
         res.json(updatedOffer);
     } catch (err) {
         console.log(err);
@@ -205,10 +209,10 @@ router.delete('/api/offers/:id', async (req, res) => {
     }
 });
 // Get offers by category
-router.get('/offers/:category', async (req, res) => {
-    const category = req.params.category;
+router.get('/offers/:domain', async (req, res) => {
+    const domain = req.params.domain;
     try {
-        const offers = await Offer.find({ category: category });
+        const offers = await Offer.find({ domain: domain });
         res.json(offers);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -266,11 +270,11 @@ router.delete('/api/question/:id', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-router.use(express.static("uploads/"));
+router.use(express.static("D:/platforme entretien/server/uploads"));
 
 var storage = multer.diskStorage({
     destination: (req, file, callBack) => {
-        callBack(null, 'uploads/');
+        callBack(null, 'D:/platforme entretien/server/uploads');
     },
     filename: (req, file, callBack) => {
         callBack(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
@@ -280,6 +284,7 @@ var storage = multer.diskStorage({
 var upload = multer({
     storage: storage
 });
+//postuler dans un offre
 router.post('/apply-for-job', upload.single('cv'), async (req, res) => {
     try {
         const { offerId } = req.body;
@@ -377,6 +382,185 @@ router.post('/analyse', upload.single('video'), async (req, res) => {
         }
     });
 });
+router.post('/analyze-and-save-text', async (req, res) => {
+    try {
+        const { recordedVideoUrl } = req.body;
+
+        // Appel au script Python pour extraire le texte de la vidéo
+        const pythonProcess = spawn('python', ['extract_audio_and_text.py', recordedVideoUrl]);
+
+        pythonProcess.stdout.on('data', async (data) => {
+            const extractedText = data.toString().trim();
+            if (extractedText) {
+                // Enregistrement du texte extrait dans la base de données
+                // Ici, vous pouvez utiliser une bibliothèque comme Mongoose pour interagir avec MongoDB
+                // Exemple fictif d'enregistrement dans MongoDB
+                // await TextModel.create({ text: extractedText });
+
+                console.log('Texte extrait:', extractedText);
+
+                // Envoyer une réponse au client
+                res.status(200).json({ extractedText });
+            } else {
+                console.log('Erreur: Impossible d\'extraire du texte de la vidéo.');
+                res.status(400).json({ error: 'Failed to extract text from the video.' });
+            }
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`Erreur de script Python: ${data}`);
+            res.status(500).json({ error: 'Internal server error.' });
+        });
+    } catch (error) {
+        console.error('Erreur:', error.message);
+        res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
+// Configuration du client Speech-to-Text
+const speechClient = new SpeechClient();
+
+// Endpoint pour extraire le texte de l'audio de la vidéo
+router.post('/extract-text-from-video', upload.single('video'), async (req, res) => {
+    try {
+      // Vérifier si un fichier vidéo a été téléchargé
+      if (!req.file) {
+        return res.status(400).send('No video file uploaded');
+      }
+  
+      // Récupérer l'URL Blob depuis le corps de la requête
+      const { blobUrl } = req.body;
+  
+      // Convertir l'URL Blob en données audio
+      const response = await fetch(blobUrl);
+      const audioBuffer = await response.arrayBuffer();
+  
+      // Configuration de la requête de transcription
+      const audio = {
+        content: Buffer.from(audioBuffer).toString('base64'),
+      };
+      const config = {
+        encoding: 'LINEAR16',
+        sampleRateHertz: 16000,
+        languageCode: 'fr-FR', // Langue du contenu audio
+      };
+      const request = {
+        audio: audio,
+        config: config,
+      };
+  
+      // Effectuer la transcription de l'audio
+      const [transcriptionResponse] = await speechClient.recognize(request);
+      const transcription = transcriptionResponse.results.map(result => result.alternatives[0].transcript).join('\n');
+  
+      // Retourner la transcription de l'audio
+      res.json({ text: transcription });
+    } catch (error) {
+      console.error('Error extracting text from video:', error);
+      res.status(500).send('Error extracting text from video');
+    }
+  });
+  
+  const { exec } = require('child_process');
+  router.post('/extract-text-from-all-videos', async (req, res) => {
+    try {
+        // Récupérer toutes les vidéos enregistrées de la base de données
+        const videos = await VideoRecord.find();
+
+        // Stocker les transcriptions de chaque vidéo
+        const transcriptions = [];
+
+        // Parcourir toutes les vidéos et exécuter le script Python pour extraire le texte de l'audio
+        for (const video of videos) {
+            // Vérifier si l'URL de la vidéo est définie
+            if (!video.videoUrl) {
+                console.error('URL de la vidéo non définie :', video);
+                continue; // Passer à la prochaine vidéo
+            }
+
+            // Exécuter le script Python pour transcrire l'audio en texte
+            exec(`python transcribe_audio.py ${video.videoUrl}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(`Erreur d'exécution: ${error}`);
+                    return;
+                }
+                console.log(`Transcription de l'audio : ${stdout}`);
+                // Stocker la transcription dans un tableau
+                transcriptions.push({ videoId: video.id, text: stdout.trim() });
+            });
+        }
+
+        // Attendez que toutes les transcriptions soient complétées avant de renvoyer la réponse
+        setTimeout(() => {
+            // Retourner les transcriptions de toutes les vidéos
+            res.json(transcriptions);
+        }, 5000); // Attendez 5 secondes (ou ajustez selon votre besoin)
+
+    } catch (error) {
+        console.error('Erreur lors de l\'analyse des vidéos :', error);
+        res.status(500).send('Erreur lors de l\'analyse des vidéos.');
+    }
+    
+});
+
+
+
+router.post('/analysevideo', async (req, res) => {
+    try {
+        const videos = await VideoRecord.find({});
+        const extractedData = [];
+        for (const video of videos) {
+            const { _id, email, videoUrl } = video;
+
+            // Afficher les informations de la vidéo
+            console.log(`Vidéo ID: ${_id}, Email: ${email}, URL: ${videoUrl}`);
+
+            // Exécuter l'extraction de texte directement
+            const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
+            let extractedText = '';
+
+            pythonProcess.stdout.on('data', (data) => {
+                extractedText += data.toString();
+            });
+
+            pythonProcess.on('close', async (code) => {
+                if (code === 0) {
+                    const startIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
+                    const extractedTextContent = extractedText.substring(startIndex).trim();
+                    
+                    // Stocker les données extraites dans le tableau
+                    extractedData.push({
+                        videoId: _id,
+                        email,
+                        videoUrl,
+                        extractedText: extractedTextContent
+                    });
+
+                    // Afficher les données analysées
+                    console.log('Données analysées :', {
+                        videoId: _id,
+                        email,
+                        videoUrl,
+                        extractedText: extractedTextContent
+                    });
+
+                    // Vérifier si toutes les vidéos ont été analysées
+                    if (extractedData.length === videos.length) {
+                        // Envoyer les données extraites au format JSON une fois toutes les vidéos analysées
+                        res.status(200).json(extractedData);
+                    }
+                } else {
+                    console.error('Erreur lors de l\'extraction du texte de la vidéo.');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'analyse des vidéos :', error);
+        res.status(500).send('Erreur lors de l\'analyse des vidéos.');
+    }
+});
+
+
 //make interview
 router.post('/schedule', async (req, res) => {
     try {
@@ -389,8 +573,20 @@ router.post('/schedule', async (req, res) => {
       res.status(500).json({ message: 'Failed to schedule interview' });
     }
   });
-
+  router.get('/interviews', async (req, res) => {
+    try {
+      // Fetch all interviews from the database
+      const interviews = await Interview.find();
+      
+      // Send the interviews as a response
+      res.status(200).json(interviews);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Failed to fetch interviews' });
+    }
+  });
  // Route pour enregistrer la vidéo
+ /*
 router.post('/api/video-record', async (req, res) => {
     const { email, videoUrl } = req.body;
   
@@ -405,7 +601,29 @@ router.post('/api/video-record', async (req, res) => {
       console.error(error);
       res.status(500).json({ message: 'Server error' });
     }
+  });*/
+ // Route pour enregistrer la vidéo
+router.post('/api/video-record', upload.single('video'), async (req, res) => {
+    const { email } = req.body;
+    const videoUrl = req.file.path; // Récupérer le chemin du fichier vidéo enregistré
+  
+    try {
+      // Créer une nouvelle instance du modèle VideoRecord
+      const newRecord = new VideoRecord({
+        email,
+        videoUrl
+      });
+  
+      // Enregistrer dans la base de données
+      await newRecord.save();
+  
+      res.status(201).json({ message: 'Video record saved successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
   });
+  
 // Fonction pour extraire les données à partir d'un fichier (PDF ou image) en utilisant le script Python
 function extractDataFromFile(fileType, filePath, outputDir) {
     return new Promise((resolve, reject) => {
@@ -455,12 +673,11 @@ router.get('/analyze-applicants', async (req, res) => {
             const organizedData = {
                 applicantId: applicant._id,
                 extractedText: extractedData.extracted_text || {}, // Utiliser un objet vide par défaut
-                extractedFaces: extractedData.extracted_faces || [] // Utiliser un tableau vide par défaut
+                extractedFacesLinks: extractedData.extracted_faces_links|| [] // Utiliser un tableau vide par défaut
             };
 
             analysisResults.push(organizedData);
         }
-
         res.status(200).json({ message: 'Applicants analyzed successfully', data: analysisResults });
     } catch (error) {
         console.error('Error analyzing applicants:', error);

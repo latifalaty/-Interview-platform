@@ -5,8 +5,9 @@ const OfferQuestions = () => {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(30); // Temps initial de 30 secondes
+    const [timeLeft, setTimeLeft] = useState(180); // Temps initial de 180 secondes (3 minutes)
     const [allQuestionsDisplayed, setAllQuestionsDisplayed] = useState(false);
+    const [displayedQuestions, setDisplayedQuestions] = useState([]);
     const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
 
     useEffect(() => {
@@ -15,6 +16,7 @@ const OfferQuestions = () => {
                 try {
                     const response = await axios.get(`http://localhost:8009/questions/${selectedCategory}`);
                     setQuestions(response.data);
+                    setDisplayedQuestions([]);
                 } catch (error) {
                     console.error("Error fetching questions:", error);
                 }
@@ -25,6 +27,12 @@ const OfferQuestions = () => {
     }, [selectedCategory]);
 
     useEffect(() => {
+        if (questions.length > 0 && displayedQuestions.length === 0) {
+            setDisplayedQuestions([...questions]);
+        }
+    }, [questions, displayedQuestions]);
+
+    useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft(prevTime => {
                 if (prevTime > 0) {
@@ -32,13 +40,13 @@ const OfferQuestions = () => {
                 } else {
                     // Passer à la question suivante lorsque le temps est écoulé
                     setCurrentQuestionIndex(prevIndex => {
-                        const nextIndex = (prevIndex + 1) % questions.length;
+                        const nextIndex = (prevIndex + 1) % displayedQuestions.length;
                         if (nextIndex === 0) {
                             setAllQuestionsDisplayed(true);
                         }
                         return nextIndex;
                     });
-                    return 30; // Réinitialiser le temps restant à 30 secondes
+                    return 180; // Réinitialiser le temps restant à 180 secondes (3 minutes)
                 }
             });
         }, 1000); // Mettre à jour le temps restant toutes les secondes
@@ -47,7 +55,7 @@ const OfferQuestions = () => {
         return () => {
             clearInterval(timer);
         };
-    }, [currentQuestionIndex, questions]);
+    }, [currentQuestionIndex, displayedQuestions]);
 
     const handleChangeCategory = (e) => {
         setSelectedCategory(e.target.value);
@@ -55,7 +63,12 @@ const OfferQuestions = () => {
         setAllQuestionsDisplayed(false); // Réinitialiser l'état des questions affichées
     };
 
-    const currentQuestion = questions[currentQuestionIndex];
+    const handleNextQuestion = () => {
+        setCurrentQuestionIndex(prevIndex => (prevIndex + 1) % displayedQuestions.length);
+        setTimeLeft(180); // Réinitialiser le temps restant à 180 secondes (3 minutes) lors du passage à la question suivante
+    };
+
+    const currentQuestion = displayedQuestions[currentQuestionIndex];
 
     return (
         <div>
@@ -71,6 +84,7 @@ const OfferQuestions = () => {
                     <h2>Question:</h2>
                     <h3>{currentQuestion.question}</h3>
                     <p>Time Left: {timeLeft} seconds</p>
+                    {!allQuestionsDisplayed && <button onClick={handleNextQuestion} className='btn danger'>Next</button>}
                 </div>
             )}
             {allQuestionsDisplayed && <p>Vous êtes arrivé à la fin des questions.</p>}

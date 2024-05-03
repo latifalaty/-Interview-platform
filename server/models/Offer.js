@@ -13,7 +13,7 @@ const offerSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    category: {
+    domain: {
         type: String,
         required: true
     }

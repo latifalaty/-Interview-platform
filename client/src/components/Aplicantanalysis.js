@@ -33,11 +33,12 @@ const ApplicantAnalysis = () => {
                         ))}
                         <h3>Extracted Faces:</h3>
                         <ul>
-                            {result.extractedFaces.map((face, faceIndex) => (
-                                <li key={faceIndex}>
-                                    <img src={face} alt={`Face ${faceIndex}`} />
-                                </li>
-                            ))}
+                        {result.extractedFacesLinks && result.extractedFacesLinks.map((faceLink, faceIndex) => (
+    <li key={faceIndex}>
+        <img src={faceLink} alt={`Face ${faceIndex}`} width="200" />
+    </li>
+))}
+
                         </ul>
                     </li>
                 ))}

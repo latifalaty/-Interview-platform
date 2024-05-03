@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const videoRecordSchema = new mongoose.Schema({

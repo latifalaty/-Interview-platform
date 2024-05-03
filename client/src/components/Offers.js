@@ -7,12 +7,12 @@ const Offers = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [salary, setSalary] = useState('');
-    const [category, setCategory] = useState('');
+    const [domain, setDomain] = useState('');
     const [editingOfferId, setEditingOfferId] = useState(null);
     const [showForm, setShowForm] = useState(false); // État pour contrôler l'affichage du formulaire
 
     // Liste des catégories disponibles
-    const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
+    const domains = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
 
     useEffect(() => {
         fetchOffers();
@@ -30,15 +30,15 @@ const Offers = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (editingOfferId) {
-            await axios.put(`http://localhost:8009/api/offers/${editingOfferId}`, { title, description, salary, category });
+            await axios.put(`http://localhost:8009/api/offers/${editingOfferId}`, { title, description, salary, domain });
             setEditingOfferId(null);
         } else {
-            await axios.post('http://localhost:8009/createoffer', { title, description, salary, category });
+            await axios.post('http://localhost:8009/createoffer', { title, description, salary, domain });
         }
         setTitle('');
         setDescription('');
         setSalary('');
-        setCategory('');
+        setDomain('');
         fetchOffers();
     };
 
@@ -46,7 +46,7 @@ const Offers = () => {
         setTitle(offer.title);
         setDescription(offer.description);
         setSalary(offer.salary);
-        setCategory(offer.category);
+        setDomain(offer.domain);
         setEditingOfferId(offer._id);
     };
 
@@ -75,10 +75,10 @@ const Offers = () => {
                         <input type="number" className="form-control" placeholder="Salary" value={salary} onChange={(e) => setSalary(e.target.value)} />
                     </div>
                     <div className="form-group">
-                        <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
-                            <option value="">Select Category</option>
-                            {categories.map((cat, index) => (
-                                <option key={index} value={cat}>{cat}</option>
+                        <select className="form-control" value={domain} onChange={(e) => setDomain(e.target.value)}>
+                            <option value="">Select domain</option>
+                            {domains.map((dom, index) => (
+                                <option key={index} value={dom}>{dom}</option>
                             ))}
                         </select>
                     </div>
@@ -92,7 +92,7 @@ const Offers = () => {
                         <h3>{offer.title}</h3>
                         <p>{offer.description}</p>
                         <p>Salary: ${offer.salary}</p>
-                        <p>Category: {offer.category}</p>
+                        <p>Domain: {offer.domain}</p>
                         <button onClick={() => handleEdit(offer)} className="btn btn-primary mr-2">Edit</button>
                         <button onClick={() => handleDelete(offer._id)} className="btn btn-danger">Delete</button>
                         

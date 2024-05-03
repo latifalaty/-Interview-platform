@@ -24,6 +24,7 @@ import Analyse from "./components/Analyse";
 import InterviewForm from "./components/context/InterviewForm";
 import ApplicantsList from "./components/Applicantslist";
 import ApplicantAnalysis from "./components/Aplicantanalysis";
+import InterviewNotifications from "./components/Interviews";
 
 function App() {
 
@@ -91,6 +92,7 @@ function App() {
               <Route path="/Consulterquestion" element={<OfferQuestions />} />
               <Route path="/analyse" element={<Analyse/>} />
               <Route path="/makeinterview" element={<InterviewForm/>} />
+              <Route path="/interviews" element={<InterviewNotifications/>} />
             </Routes>
           </>
 

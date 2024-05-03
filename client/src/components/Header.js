@@ -74,10 +74,6 @@ return (
                     {
                         <>
                             <MenuItem onClick={() => {
-                                goDash()
-                                handleClose()
-                            }}>Profile</MenuItem>
-                            <MenuItem onClick={() => {
                                 handleLogoutClick()
                                 handleCloseUserMenu()
                             }}>Logout</MenuItem>
