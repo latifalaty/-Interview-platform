@@ -2,13 +2,23 @@ import subprocess
 import os
 import sys
 import json
+import requests
 import moviepy.editor as mp
 import speech_recognition as sr
+
+def download_video_from_url(url, output_file):
+    try:
+        response = requests.get(url)
+        with open(output_file, 'wb') as f:
+            f.write(response.content)
+        return output_file
+    except Exception as e:
+        print(f"Une erreur s'est produite lors du téléchargement du fichier vidéo: {str(e)}")
+    return None
 
 def convert_video(input_file, output_file):
     try:
         subprocess.run(['ffmpeg', '-i', input_file, '-c:v', 'libx264', '-c:a', 'aac', '-strict', 'experimental', output_file], check=True)
-       
         return output_file
     except subprocess.CalledProcessError as e:
         print(f"Erreur lors de la conversion: {e}")
@@ -45,21 +55,23 @@ def extract_text_from_audio(audio_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python extract_audio_and_text.py <audio_file>")
+        print("Usage: python extract_audio_and_text.py <video_url>")
         sys.exit(1)
     
-    audio_path = sys.argv[1]
+    video_url = sys.argv[1]
     
-    # Vérifier si le fichier spécifié existe
-    if not os.path.isfile(audio_path):
-        print("Erreur: Fichier introuvable")
+    # Télécharger le fichier vidéo depuis l'URL spécifiée
+    video_file = download_video_from_url(video_url, "input_video.mp4")
+    if not video_file:
+        print("Erreur: Impossible de télécharger le fichier vidéo depuis l'URL spécifiée.")
         sys.exit(1)
     
-    extracted_text = extract_text_from_audio(audio_path)
+    extracted_text = extract_text_from_audio(video_file)
     if extracted_text:
         print("Texte extrait:", extracted_text)
     else:
         print("Erreur: Impossible d'extraire du texte de l'audio.")
+    
     # Imprimer le résultat au format JSON
     result = {"extracted_text": extracted_text} if extracted_text else {"error": "Failed to extract text from the audio."}
     print(json.dumps(result))

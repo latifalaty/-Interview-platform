@@ -20,7 +20,7 @@ const Interview = require('../models/Interview');
 const path = require('path');
 const { spawn } = require('child_process');
 const AnalysedVideo = require("../models/Analysedvideo");
-
+const PORT = 8009;
 // Register route
 router.post("/register", async (req, res) => {
     const { fname, lname, email, password, cpassword, userType, company, jobTitle, education, experience } = req.body;
@@ -270,11 +270,11 @@ router.delete('/api/question/:id', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-router.use(express.static("D:/platforme entretien/server/uploads"));
+router.use(express.static("./uploads"));
 
 var storage = multer.diskStorage({
     destination: (req, file, callBack) => {
-        callBack(null, 'D:/platforme entretien/server/uploads');
+        callBack(null, './uploads');
     },
     filename: (req, file, callBack) => {
         callBack(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
@@ -337,174 +337,71 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-//analyser video
-router.post('/analyse', upload.single('video'), async (req, res) => {
-    const videoPath = req.file.path;
-    const candidateEmail = req.body.email;
+
+router.get('/analyse', async (req, res) => { // Changement de POST à GET
     let extractedText = '';
     let responseSent = false;
 
-    const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoPath]);
-    pythonProcess.stdout.on('data', async (data) => {
-        extractedText += data.toString();
-        console.log('Extracted Text:', extractedText);
-    
-        // Enregistrer les données dans la base de données directement après l'extraction du texte
-        if (!responseSent && extractedText.includes('Texte extrait:')) { // Vérifier si le texte extrait est disponible
-            try {
-                const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
-                const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
-
-                const candidateData = new CandidateData({
-                    email: candidateEmail,
-                    extractedText: extractedTextContent // Utiliser le texte extrait réel pour enregistrement
-                });
-                console.log('Candidate Data:', candidateData); // Logging candidateData
-                await candidateData.save();
-                res.status(200).json({ extracted_text: extractedTextContent });
-                responseSent = true; // Mettre à jour pour éviter l'envoi multiple de la réponse
-            } catch (error) {
-                console.error('Error saving data:', error);
-                if (!responseSent) {
-                    res.status(500).send('Error saving data.');
-                    responseSent = true; // Assurez-vous que la réponse est envoyée même en cas d'erreur
-                }
-            }
-        }
-    });
-    
-
-    pythonProcess.on('close', (code) => {
-        if (code !== 0 && !responseSent) {
-            console.error('Python process closed with non-zero exit code:', code);
-            res.status(500).send('Error extracting text from audio');
-            responseSent = true; // Mettre à jour pour éviter l'envoi multiple de la réponse
-        }
-    });
-});
-router.post('/analyze-and-save-text', async (req, res) => {
     try {
-        const { recordedVideoUrl } = req.body;
-
-        // Appel au script Python pour extraire le texte de la vidéo
-        const pythonProcess = spawn('python', ['extract_audio_and_text.py', recordedVideoUrl]);
-
-        pythonProcess.stdout.on('data', async (data) => {
-            const extractedText = data.toString().trim();
-            if (extractedText) {
-                // Enregistrement du texte extrait dans la base de données
-                // Ici, vous pouvez utiliser une bibliothèque comme Mongoose pour interagir avec MongoDB
-                // Exemple fictif d'enregistrement dans MongoDB
-                // await TextModel.create({ text: extractedText });
-
-                console.log('Texte extrait:', extractedText);
-
-                // Envoyer une réponse au client
-                res.status(200).json({ extractedText });
-            } else {
-                console.log('Erreur: Impossible d\'extraire du texte de la vidéo.');
-                res.status(400).json({ error: 'Failed to extract text from the video.' });
-            }
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`Erreur de script Python: ${data}`);
-            res.status(500).json({ error: 'Internal server error.' });
-        });
-    } catch (error) {
-        console.error('Erreur:', error.message);
-        res.status(500).json({ error: 'Internal server error.' });
-    }
-});
-
-// Configuration du client Speech-to-Text
-const speechClient = new SpeechClient();
-
-// Endpoint pour extraire le texte de l'audio de la vidéo
-router.post('/extract-text-from-video', upload.single('video'), async (req, res) => {
-    try {
-      // Vérifier si un fichier vidéo a été téléchargé
-      if (!req.file) {
-        return res.status(400).send('No video file uploaded');
-      }
-  
-      // Récupérer l'URL Blob depuis le corps de la requête
-      const { blobUrl } = req.body;
-  
-      // Convertir l'URL Blob en données audio
-      const response = await fetch(blobUrl);
-      const audioBuffer = await response.arrayBuffer();
-  
-      // Configuration de la requête de transcription
-      const audio = {
-        content: Buffer.from(audioBuffer).toString('base64'),
-      };
-      const config = {
-        encoding: 'LINEAR16',
-        sampleRateHertz: 16000,
-        languageCode: 'fr-FR', // Langue du contenu audio
-      };
-      const request = {
-        audio: audio,
-        config: config,
-      };
-  
-      // Effectuer la transcription de l'audio
-      const [transcriptionResponse] = await speechClient.recognize(request);
-      const transcription = transcriptionResponse.results.map(result => result.alternatives[0].transcript).join('\n');
-  
-      // Retourner la transcription de l'audio
-      res.json({ text: transcription });
-    } catch (error) {
-      console.error('Error extracting text from video:', error);
-      res.status(500).send('Error extracting text from video');
-    }
-  });
-  
-  const { exec } = require('child_process');
-  router.post('/extract-text-from-all-videos', async (req, res) => {
-    try {
-        // Récupérer toutes les vidéos enregistrées de la base de données
-        const videos = await VideoRecord.find();
-
-        // Stocker les transcriptions de chaque vidéo
-        const transcriptions = [];
-
-        // Parcourir toutes les vidéos et exécuter le script Python pour extraire le texte de l'audio
+        const videos = await VideoRecord.find({});
+        
         for (const video of videos) {
-            // Vérifier si l'URL de la vidéo est définie
-            if (!video.videoUrl) {
-                console.error('URL de la vidéo non définie :', video);
-                continue; // Passer à la prochaine vidéo
-            }
+            const { _id, email, videoUrl } = video;
+            console.log(`Vidéo ID: ${_id}, Email: ${email}, URL: ${videoUrl}`);
+            
+            const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
 
-            // Exécuter le script Python pour transcrire l'audio en texte
-            exec(`python transcribe_audio.py ${video.videoUrl}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`Erreur d'exécution: ${error}`);
-                    return;
+            pythonProcess.stdout.on('data', (data) => {
+                extractedText += data.toString();
+                console.log('Texte extrait:', extractedText);
+                
+                if (!responseSent && extractedText.includes('Texte extrait:')) {
+                    const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
+                    const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
+
+                    const candidateData = new CandidateData({
+                        email: email,
+                        extractedText: extractedTextContent
+                    });
+
+                    console.log('Données du candidat:', candidateData);
+
+                    candidateData.save()
+                        .then(() => {
+                            res.status(200).json({ extracted_text: extractedTextContent });
+                            responseSent = true;
+                        })
+                        .catch((error) => {
+                            console.error('Erreur lors de l\'enregistrement des données:', error);
+                            if (!responseSent) {
+                                res.status(500).send('Erreur lors de l\'enregistrement des données.');
+                                responseSent = true;
+                            }
+                        });
                 }
-                console.log(`Transcription de l'audio : ${stdout}`);
-                // Stocker la transcription dans un tableau
-                transcriptions.push({ videoId: video.id, text: stdout.trim() });
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.error('Erreur dans le processus Python:', data.toString());
+                responseSent = true;
+            });
+
+            pythonProcess.on('close', (code) => {
+                if (code !== 0 && !responseSent) {
+                    console.error('Le processus Python s\'est terminé avec un code de sortie non nul:', code);
+                    res.status(500).send('Erreur lors de l\'extraction du texte de l\'audio');
+                    responseSent = true;
+                }
             });
         }
-
-        // Attendez que toutes les transcriptions soient complétées avant de renvoyer la réponse
-        setTimeout(() => {
-            // Retourner les transcriptions de toutes les vidéos
-            res.json(transcriptions);
-        }, 5000); // Attendez 5 secondes (ou ajustez selon votre besoin)
-
     } catch (error) {
-        console.error('Erreur lors de l\'analyse des vidéos :', error);
-        res.status(500).send('Erreur lors de l\'analyse des vidéos.');
+        console.error('Erreur lors de la recherche des vidéos dans la base de données:', error);
+        return res.status(500).json({ error: "Erreur lors de la recherche des vidéos dans la base de données." });
     }
-    
 });
 
 
-
+      
 router.post('/analysevideo', async (req, res) => {
     try {
         const videos = await VideoRecord.find({});
@@ -573,6 +470,44 @@ router.post('/schedule', async (req, res) => {
       res.status(500).json({ message: 'Failed to schedule interview' });
     }
   });
+  const { createFFmpeg } = require('@ffmpeg/ffmpeg');
+  router.post('/api/convert', async (req, res) => {
+    try {
+      const { email, videoUrl } = req.body;
+  
+      // Télécharger le fichier vidéo à partir de l'URL
+      const response = await axios.get(videoUrl, { responseType: 'stream' });
+      const videoPath = './temp/video.mp4'; // Chemin temporaire pour stocker le fichier vidéo
+  
+      // Enregistrer le flux vidéo dans un fichier
+      const writer = fs.createWriteStream(videoPath);
+      response.data.pipe(writer);
+  
+      // Une fois le téléchargement terminé
+      writer.on('finish', () => {
+        // Utiliser FFmpeg pour convertir le fichier vidéo en MP4
+        const convertedFilePath = `./temp/${email}_converted.mp4`; // Chemin de sortie de la vidéo convertie
+        const ffmpegCommand = `ffmpeg -i ${videoPath} -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 192k -ac 2 ${convertedFilePath}`;
+  
+        exec(ffmpegCommand, (error) => {
+          if (error) {
+            console.error('FFmpeg conversion error:', error);
+            res.status(500).json({ error: 'Conversion failed' });
+          } else {
+            console.log('Video conversion successful');
+            // Supprimer le fichier vidéo d'origine
+            fs.unlinkSync(videoPath);
+            // Envoyer l'URL de la vidéo convertie en réponse
+            res.json({ url: convertedFilePath });
+          }
+        });
+      });
+  
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
   router.get('/interviews', async (req, res) => {
     try {
       // Fetch all interviews from the database
@@ -585,44 +520,31 @@ router.post('/schedule', async (req, res) => {
       res.status(500).json({ message: 'Failed to fetch interviews' });
     }
   });
- // Route pour enregistrer la vidéo
- /*
-router.post('/api/video-record', async (req, res) => {
-    const { email, videoUrl } = req.body;
-  
+  router.post('/api/video-record', upload.single('video'), async (req, res) => {
     try {
-      const newRecord = new VideoRecord({
-        email,
-        videoUrl,
-      });
-      await newRecord.save();
-      res.status(201).json({ message: 'Video record saved successfully' });
+        if (!req.file) {
+            return res.status(400).json({ error: 'Aucun fichier vidéo n\'a été téléchargé' });
+        }
+
+        const { email } = req.body;
+        const videoUrl ='http://127.0.0.1:8009/' + req.file.filename ; // Récupérer le chemin du fichier vidéo enregistré
+        
+        // Créer une nouvelle instance du modèle VideoRecord
+        const newRecord = new VideoRecord({
+            email,
+            videoUrl
+        });
+
+        // Enregistrer dans la base de données
+        await newRecord.save();
+
+        res.status(201).json({ message: 'Enregistrement vidéo réussi' });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+        console.error('Erreur lors de l\'enregistrement de la vidéo:', error);
+        res.status(500).json({ error: 'Erreur serveur lors de l\'enregistrement de la vidéo' });
     }
-  });*/
- // Route pour enregistrer la vidéo
-router.post('/api/video-record', upload.single('video'), async (req, res) => {
-    const { email } = req.body;
-    const videoUrl = req.file.path; // Récupérer le chemin du fichier vidéo enregistré
-  
-    try {
-      // Créer une nouvelle instance du modèle VideoRecord
-      const newRecord = new VideoRecord({
-        email,
-        videoUrl
-      });
-  
-      // Enregistrer dans la base de données
-      await newRecord.save();
-  
-      res.status(201).json({ message: 'Video record saved successfully' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
+});
+
   
 // Fonction pour extraire les données à partir d'un fichier (PDF ou image) en utilisant le script Python
 function extractDataFromFile(fileType, filePath, outputDir) {
@@ -694,6 +616,14 @@ router.get('/applicants', async (req, res) => {
     }
   });
 
-  
+  router.get('/videos', async (req, res) => {
+    try {
+        const videos = await VideoRecord.find({});
+        res.status(200).json({ videos });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des vidéos depuis la base de données:', error);
+        res.status(500).json({ error: "Erreur lors de la récupération des vidéos depuis la base de données." });
+    }
+});
 
 module.exports = router;

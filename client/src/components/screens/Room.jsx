@@ -22,69 +22,51 @@ const RoomPage = () => {
     alert("Recording started");
   }, [videoRecorder]);
 
-    // Fonction pour télécharger le Blob
-    async function downloadBlob(url) {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      return blob;
-    }
-  
-  // Fonction pour sauvegarder le Blob localement et retourner le chemin du fichier
-  async function saveBlobLocally(blob) {
-    const fileName = 'video_enregistree.mp4'; // Nom de fichier souhaité
-    const url = URL.createObjectURL(blob);
-    
-    // Création d'un lien invisible pour déclencher le téléchargement
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    
-    // Clic sur le lien pour télécharger le fichier
-    a.click();
-  
-    // Nettoyage après le téléchargement
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  
-    // Retourner le chemin du fichier téléchargé
-    return fileName;
-  }
   const stopRecording = async () => {
     try {
       videoRecorder.stopRecording();
-      const videoBlob = await fetch(recordedVideoUrl).then(res => res.blob());
-      const myFile = new File(
-        [videoBlob],
-        "demo.mp4",
-        { type: 'video/mp4' }
-      );
+      const videoUrl = videoRecorder.mediaBlobUrl;
+      setRecordedVideoUrl(videoUrl);
+      setDownloadUrl(videoUrl); // Update the saved URL
+      if (videoUrl) {
+        const response = await fetch(videoUrl);
+        const videoBlob = await response.blob();
+        const myFile = new File([videoBlob], "demo.mp4", { type: 'video/mp4' });
   
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('video', myFile); // Ajoutez le fichier à FormData
+        // Envoi du fichier au backend
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('video', myFile); // Ajoutez le fichier à FormData
   
-      const response = await axios.post('http://localhost:8009/api/video-record', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data' // Assurez-vous que le type de contenu est défini sur 'multipart/form-data'
-        }
-      });
+        await axios.post('http://localhost:8009/api/video-record', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data' // Assurez-vous que le type de contenu est défini sur 'multipart/form-data'
+          }
+        });
   
-      alert('Video recorded successfully and saved to the database');
-  
-      console.log('Response:', response.data);
+        alert('Video recorded successfully and saved to the database');
+      } else {
+        console.error('No recorded video available');
+      }
     } catch (error) {
       console.error(error);
     }
   };
   
+  const handleDownload = () => {
+    if (recordedVideoUrl) {
+      const link = document.createElement('a');
+      link.href = recordedVideoUrl;
+      link.setAttribute('download', 'video.mp4');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      console.error('No recorded video available for download');
+    }
+  };
   
-  // Fonction pour envoyer l'URL de la vidéo enregistrée au composant Analyse
-  const handleVideoUploaded = useCallback((videoUrl) => {
-    // Implémentez ici la logique pour envoyer l'URL au composant Analyse
-    console.log("Video uploaded:", videoUrl);
-  }, []);
+
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
     setRemoteSocketId(id);
@@ -282,13 +264,23 @@ const RoomPage = () => {
      
         </div>}
        {/* Affichage de la vidéo enregistrée si elle existe */}
-     
-   
-        <Analyse />
-   
-       
-        
-       
+       {recordedVideoUrl && (
+        <div>
+          <h1>Recorded Video</h1>
+          <video controls src={recordedVideoUrl} style={{ width: "100%", maxHeight: "80%" }} />
+        </div>
+      )}
+        <div>
+          <h3>Télécharger la vidéo enregistrée :</h3>
+          <a href={recordedVideoUrl} download="video.mp4">Download file</a>
+        </div>
+        // Remplacez cette ligne
+<a href={recordedVideoUrl} download="video.mp4">Download file</a>
+
+// Par cette ligne
+<a href={downloadUrl} download="video.mp4">Download file</a>
+
+<a href="#" onClick={handleDownload}>Download file</a>
 
       </div>
     </div>
