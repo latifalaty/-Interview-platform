@@ -14,6 +14,6 @@ const candidateDataSchema = new mongoose.Schema({
 });
 
 // Create CandidateData model
-const CandidateData = mongoose.model('CandidateData', candidateDataSchema);
+const CandidateData = mongoose.model('Candidatenalysedvideo', candidateDataSchema);
 
 module.exports = CandidateData;

@@ -337,11 +337,7 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
-
-router.get('/analyse', async (req, res) => { // Changement de POST à GET
-    let extractedText = '';
-    let responseSent = false;
-
+router.post('/analyse', async (req, res) => { 
     try {
         const videos = await VideoRecord.find({});
         
@@ -351,11 +347,13 @@ router.get('/analyse', async (req, res) => { // Changement de POST à GET
             
             const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
 
+            let extractedText = '';
+
             pythonProcess.stdout.on('data', (data) => {
                 extractedText += data.toString();
                 console.log('Texte extrait:', extractedText);
                 
-                if (!responseSent && extractedText.includes('Texte extrait:')) {
+                if (extractedText.includes('Texte extrait:')) {
                     const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
                     const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
 
@@ -368,92 +366,29 @@ router.get('/analyse', async (req, res) => { // Changement de POST à GET
 
                     candidateData.save()
                         .then(() => {
-                            res.status(200).json({ extracted_text: extractedTextContent });
-                            responseSent = true;
+                            console.log('Données enregistrées avec succès.');
                         })
                         .catch((error) => {
                             console.error('Erreur lors de l\'enregistrement des données:', error);
-                            if (!responseSent) {
-                                res.status(500).send('Erreur lors de l\'enregistrement des données.');
-                                responseSent = true;
-                            }
                         });
                 }
             });
 
             pythonProcess.stderr.on('data', (data) => {
                 console.error('Erreur dans le processus Python:', data.toString());
-                responseSent = true;
             });
 
             pythonProcess.on('close', (code) => {
-                if (code !== 0 && !responseSent) {
+                if (code !== 0) {
                     console.error('Le processus Python s\'est terminé avec un code de sortie non nul:', code);
-                    res.status(500).send('Erreur lors de l\'extraction du texte de l\'audio');
-                    responseSent = true;
                 }
             });
         }
+
+        res.status(200).json({ message: 'Traitement des vidéos en cours.' });
     } catch (error) {
         console.error('Erreur lors de la recherche des vidéos dans la base de données:', error);
         return res.status(500).json({ error: "Erreur lors de la recherche des vidéos dans la base de données." });
-    }
-});
-
-
-      
-router.post('/analysevideo', async (req, res) => {
-    try {
-        const videos = await VideoRecord.find({});
-        const extractedData = [];
-        for (const video of videos) {
-            const { _id, email, videoUrl } = video;
-
-            // Afficher les informations de la vidéo
-            console.log(`Vidéo ID: ${_id}, Email: ${email}, URL: ${videoUrl}`);
-
-            // Exécuter l'extraction de texte directement
-            const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
-            let extractedText = '';
-
-            pythonProcess.stdout.on('data', (data) => {
-                extractedText += data.toString();
-            });
-
-            pythonProcess.on('close', async (code) => {
-                if (code === 0) {
-                    const startIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
-                    const extractedTextContent = extractedText.substring(startIndex).trim();
-                    
-                    // Stocker les données extraites dans le tableau
-                    extractedData.push({
-                        videoId: _id,
-                        email,
-                        videoUrl,
-                        extractedText: extractedTextContent
-                    });
-
-                    // Afficher les données analysées
-                    console.log('Données analysées :', {
-                        videoId: _id,
-                        email,
-                        videoUrl,
-                        extractedText: extractedTextContent
-                    });
-
-                    // Vérifier si toutes les vidéos ont été analysées
-                    if (extractedData.length === videos.length) {
-                        // Envoyer les données extraites au format JSON une fois toutes les vidéos analysées
-                        res.status(200).json(extractedData);
-                    }
-                } else {
-                    console.error('Erreur lors de l\'extraction du texte de la vidéo.');
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Erreur lors de l\'analyse des vidéos :', error);
-        res.status(500).send('Erreur lors de l\'analyse des vidéos.');
     }
 });
 
@@ -468,44 +403,6 @@ router.post('/schedule', async (req, res) => {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Failed to schedule interview' });
-    }
-  });
-  const { createFFmpeg } = require('@ffmpeg/ffmpeg');
-  router.post('/api/convert', async (req, res) => {
-    try {
-      const { email, videoUrl } = req.body;
-  
-      // Télécharger le fichier vidéo à partir de l'URL
-      const response = await axios.get(videoUrl, { responseType: 'stream' });
-      const videoPath = './temp/video.mp4'; // Chemin temporaire pour stocker le fichier vidéo
-  
-      // Enregistrer le flux vidéo dans un fichier
-      const writer = fs.createWriteStream(videoPath);
-      response.data.pipe(writer);
-  
-      // Une fois le téléchargement terminé
-      writer.on('finish', () => {
-        // Utiliser FFmpeg pour convertir le fichier vidéo en MP4
-        const convertedFilePath = `./temp/${email}_converted.mp4`; // Chemin de sortie de la vidéo convertie
-        const ffmpegCommand = `ffmpeg -i ${videoPath} -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 192k -ac 2 ${convertedFilePath}`;
-  
-        exec(ffmpegCommand, (error) => {
-          if (error) {
-            console.error('FFmpeg conversion error:', error);
-            res.status(500).json({ error: 'Conversion failed' });
-          } else {
-            console.log('Video conversion successful');
-            // Supprimer le fichier vidéo d'origine
-            fs.unlinkSync(videoPath);
-            // Envoyer l'URL de la vidéo convertie en réponse
-            res.json({ url: convertedFilePath });
-          }
-        });
-      });
-  
-    } catch (error) {
-      console.error('Error:', error);
-      res.status(500).json({ error: 'Server error' });
     }
   });
   router.get('/interviews', async (req, res) => {
