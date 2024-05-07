@@ -1,6 +1,10 @@
 import React from 'react';
 import { Navbar, Nav } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import CvAnalysisComponent from './Cvanalyse';
+import CandidateDataComponent from './Analysevideo';
+import ApplicantsList from './Applicantslist';
+import EmotionComponent from './Lesemotions';
 
 const RecruteurComponent = () => {
     return (<div>
@@ -16,6 +20,10 @@ const RecruteurComponent = () => {
         </Navbar>
         <body>
             <h1> Dashbord</h1>
+            <ApplicantsList />
+            <CvAnalysisComponent />
+                <CandidateDataComponent/>
+                <EmotionComponent/>
         </body>
         </div>
     );

@@ -10,7 +10,11 @@ const candidateDataSchema = new mongoose.Schema({
     extractedText: {
         type: String,
         required: true
-    },
+    },   // Champ pour stocker l'image du visage extrait
+    faceImage: {
+        data: Buffer,
+        contentType: String
+    }
 });
 
 // Create CandidateData model

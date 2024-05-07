@@ -45,6 +45,7 @@ const RoomPage = () => {
         });
   
         alert('Video recorded successfully and saved to the database');
+        await axios.post('http://localhost:8009/analyse');
       } else {
         console.error('No recorded video available');
       }
@@ -270,18 +271,6 @@ const RoomPage = () => {
           <video controls src={recordedVideoUrl} style={{ width: "100%", maxHeight: "80%" }} />
         </div>
       )}
-        <div>
-          <h3>Télécharger la vidéo enregistrée :</h3>
-          <a href={recordedVideoUrl} download="video.mp4">Download file</a>
-        </div>
-        // Remplacez cette ligne
-<a href={recordedVideoUrl} download="video.mp4">Download file</a>
-
-// Par cette ligne
-<a href={downloadUrl} download="video.mp4">Download file</a>
-
-<a href="#" onClick={handleDownload}>Download file</a>
-
       </div>
     </div>
   );

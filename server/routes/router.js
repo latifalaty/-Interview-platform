@@ -17,10 +17,10 @@ const Applicant = require("../models/Applicant");
 const VideoRecord = require("../models/Video");
 const CandidateData = require('../models/CandidateData');
 const Interview = require('../models/Interview');
+const CvAnalysis = require('D:/platforme entretien/server/models/CvAnalysis');
+const emotionSchema = require('D:/platforme entretien/server/models/emotionSchema');
 const path = require('path');
 const { spawn } = require('child_process');
-const AnalysedVideo = require("../models/Analysedvideo");
-const PORT = 8009;
 // Register route
 router.post("/register", async (req, res) => {
     const { fname, lname, email, password, cpassword, userType, company, jobTitle, education, experience } = req.body;
@@ -336,41 +336,45 @@ router.get('/questions/:category', async (req, res) => {
         console.error("Error fetching questions:", error);
         res.status(500).json({ error: "Server error" });
     }
-});
-router.post('/analyse', async (req, res) => { 
+});router.post('/analyse', async (req, res) => {
     try {
-        const videos = await VideoRecord.find({});
-        
-        for (const video of videos) {
-            const { _id, email, videoUrl } = video;
-            console.log(`Vidéo ID: ${_id}, Email: ${email}, URL: ${videoUrl}`);
-            
-            const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
+        // Recherche de la dernière vidéo créée
+        const video = await VideoRecord.findOne({}).sort({ createdAt: -1 });
 
-            let extractedText = '';
+        if (!video) {
+            return res.status(404).json({ error: 'Aucune vidéo trouvée.' });
+        }
 
-            pythonProcess.stdout.on('data', (data) => {
-                extractedText += data.toString();
-                console.log('Texte extrait:', extractedText);
-                
-                if (extractedText.includes('Texte extrait:')) {
+        const { _id, email, videoUrl } = video;
+        console.log(`Vidéo ID: ${_id}, Email: ${email}, URL: ${videoUrl}`);
+
+        const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
+
+        let extractedText = '';
+        let extractedFaceImage = '';
+
+        const processFinished = new Promise((resolve, reject) => {
+            pythonProcess.stdout.on('data', async (data) => {
+                const message = data.toString();
+                console.log('Message from Python:', message);
+
+                if (message.includes('Texte extrait:')) {
+                    extractedText += message;
                     const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
                     const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
 
-                    const candidateData = new CandidateData({
-                        email: email,
-                        extractedText: extractedTextContent
-                    });
-
-                    console.log('Données du candidat:', candidateData);
-
-                    candidateData.save()
-                        .then(() => {
-                            console.log('Données enregistrées avec succès.');
-                        })
-                        .catch((error) => {
-                            console.error('Erreur lors de l\'enregistrement des données:', error);
+                    try {
+                        const candidateData = new CandidateData({
+                            email: email,
+                            extractedText: extractedTextContent,
                         });
+                        await candidateData.save();
+                        console.log('Données du candidat enregistrées avec succès.');
+                    } catch (error) {
+                        console.error('Erreur lors de l\'enregistrement des données:', error);
+                    }
+                } else if (message.includes('Image du visage détecté:')) {
+                    extractedFaceImage = message.split(':')[1].trim();
                 }
             });
 
@@ -381,17 +385,39 @@ router.post('/analyse', async (req, res) => {
             pythonProcess.on('close', (code) => {
                 if (code !== 0) {
                     console.error('Le processus Python s\'est terminé avec un code de sortie non nul:', code);
+                    reject(new Error(`Le processus Python s'est terminé avec le code ${code}`));
+                } else {
+                    resolve();
                 }
             });
+        });
+
+        await processFinished;
+
+        if (extractedFaceImage) {
+            try {
+                const data = await fs.readFile(extractedFaceImage);
+                const updatedCandidateData = await CandidateData.findOneAndUpdate(
+                    { email: email },
+                    { faceImage: { data: data, contentType: 'image/jpeg' } },
+                    { new: true, upsert: true }
+                );
+
+                console.log('Données du candidat mises à jour avec l\'image du visage:', updatedCandidateData);
+
+                await fs.unlink(extractedFaceImage);
+                console.log('Fichier de l\'image du visage extrait supprimé avec succès.');
+            } catch (err) {
+                console.error('Erreur lors de la lecture ou de la suppression du fichier d\'image du visage:', err);
+            }
         }
 
-        res.status(200).json({ message: 'Traitement des vidéos en cours.' });
+        res.status(200).json({ message: 'Traitement vidéo terminé.' });
     } catch (error) {
-        console.error('Erreur lors de la recherche des vidéos dans la base de données:', error);
-        return res.status(500).json({ error: "Erreur lors de la recherche des vidéos dans la base de données." });
+        console.error('Erreur lors du traitement des vidéos:', error);
+        res.status(500).json({ error: 'Erreur lors du traitement des vidéos.' });
     }
 });
-
 
 //make interview
 router.post('/schedule', async (req, res) => {
@@ -474,7 +500,7 @@ function extractDataFromFile(fileType, filePath, outputDir) {
 }
 
 // Route pour analyser tous les CV des candidats
-router.get('/analyze-applicants', async (req, res) => {
+router.post('/analyze-applicants', async (req, res) => {
     try {
         const applicants = await Applicant.find();
         const analysisResults = [];
@@ -491,9 +517,14 @@ router.get('/analyze-applicants', async (req, res) => {
             // Organiser les données extraites en sections
             const organizedData = {
                 applicantId: applicant._id,
+                email: applicant.email,
                 extractedText: extractedData.extracted_text || {}, // Utiliser un objet vide par défaut
-                extractedFacesLinks: extractedData.extracted_faces_links|| [] // Utiliser un tableau vide par défaut
+                extractedFacesLinks: extractedData.extracted_faces_links || [] // Utiliser un tableau vide par défaut
             };
+
+            // Enregistrer les données analysées dans la base de données
+            const cvAnalysis = new CvAnalysis(organizedData);
+            await cvAnalysis.save();
 
             analysisResults.push(organizedData);
         }
@@ -503,6 +534,7 @@ router.get('/analyze-applicants', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 //affichage applicant
 router.get('/applicants', async (req, res) => {
     try {
@@ -512,7 +544,7 @@ router.get('/applicants', async (req, res) => {
       res.status(500).json({ message: err.message });
     }
   });
-
+//afficher les videos recordé
   router.get('/videos', async (req, res) => {
     try {
         const videos = await VideoRecord.find({});
@@ -522,5 +554,37 @@ router.get('/applicants', async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des vidéos depuis la base de données." });
     }
 });
+// Route pour récupérer les données d'analyse des CV
+router.get('/cvAnalysis', async (req, res) => {
+    try {
+        const cvAnalysisData = await CvAnalysis.find();
+        res.json(cvAnalysisData);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
+// Route pour récupérer les données des candidats analysées
+router.get('/candidateData', async (req, res) => {
+    try {
+        const candidateData = await CandidateData.find();
+        res.json(candidateData);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erreur serveur');
+    }
+});
+// Route pour récupérer les données d'émotion
+router.get('/emotion', async (req, res) => {
+    try {
+        const emotionData = await emotionSchema.find();
+        res.json(emotionData);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
 
 module.exports = router;
