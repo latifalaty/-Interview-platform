@@ -6,6 +6,7 @@ import { useSocket } from "../context/SocketProvider";
 import Video from "../Video";
 import axios from 'axios';
 import Analyse from "../Analyse";
+import OfferQuestions from "../ConsulterQuestion";
 
 const RoomPage = () => {
   const socket = useSocket();
@@ -44,7 +45,7 @@ const RoomPage = () => {
           }
         });
   
-        alert('Video recorded successfully and saved to the database');
+        alert('Video recorded successfully ');
         await axios.post('http://localhost:8009/analyse');
       } else {
         console.error('No recorded video available');
@@ -201,8 +202,14 @@ const RoomPage = () => {
         {myStream && (
           <div>
             <h1>My Stream</h1>
-            <Video  url={myStream} />
-          
+            <div style={{ display: 'flex' }}>
+      <div style={{ flex: 1, marginRight: '20px' }}>
+        <Video url={myStream} />
+      </div>
+      <div style={{ flex: 1, marginLeft: '20px',marginTop:'20%' }}>
+        <OfferQuestions/>
+      </div>
+    </div>
           </div>
         )}
       </div>

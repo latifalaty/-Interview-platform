@@ -7,7 +7,7 @@ const OfferQuestions = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(180); // Temps initial de 180 secondes (3 minutes)
     const [allQuestionsDisplayed, setAllQuestionsDisplayed] = useState(false);
-    const [displayedQuestions, setDisplayedQuestions] = useState([]);
+    const [displayedQuestionIndices, setDisplayedQuestionIndices] = useState(new Set());
     const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
 
     useEffect(() => {
@@ -16,7 +16,9 @@ const OfferQuestions = () => {
                 try {
                     const response = await axios.get(`http://localhost:8009/questions/${selectedCategory}`);
                     setQuestions(response.data);
-                    setDisplayedQuestions([]);
+                    setCurrentQuestionIndex(0); // Réinitialiser l'index de la question lorsque la catégorie est changée
+                    setAllQuestionsDisplayed(false); // Réinitialiser l'état des questions affichées
+                    setDisplayedQuestionIndices(new Set()); // Réinitialiser l'ensemble des indices des questions affichées
                 } catch (error) {
                     console.error("Error fetching questions:", error);
                 }
@@ -27,10 +29,10 @@ const OfferQuestions = () => {
     }, [selectedCategory]);
 
     useEffect(() => {
-        if (questions.length > 0 && displayedQuestions.length === 0) {
-            setDisplayedQuestions([...questions]);
+        if (questions.length > 0 && displayedQuestionIndices.size === 0) {
+            setDisplayedQuestionIndices(new Set([0])); // Ajouter le premier index au set des indices des questions affichées
         }
-    }, [questions, displayedQuestions]);
+    }, [questions, displayedQuestionIndices]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -38,14 +40,7 @@ const OfferQuestions = () => {
                 if (prevTime > 0) {
                     return prevTime - 1;
                 } else {
-                    // Passer à la question suivante lorsque le temps est écoulé
-                    setCurrentQuestionIndex(prevIndex => {
-                        const nextIndex = (prevIndex + 1) % displayedQuestions.length;
-                        if (nextIndex === 0) {
-                            setAllQuestionsDisplayed(true);
-                        }
-                        return nextIndex;
-                    });
+                    handleNextQuestion();
                     return 180; // Réinitialiser le temps restant à 180 secondes (3 minutes)
                 }
             });
@@ -55,20 +50,27 @@ const OfferQuestions = () => {
         return () => {
             clearInterval(timer);
         };
-    }, [currentQuestionIndex, displayedQuestions]);
-
-    const handleChangeCategory = (e) => {
-        setSelectedCategory(e.target.value);
-        setCurrentQuestionIndex(0); // Réinitialiser l'index de la question lorsqu'une nouvelle catégorie est sélectionnée
-        setAllQuestionsDisplayed(false); // Réinitialiser l'état des questions affichées
-    };
+    }, [currentQuestionIndex, questions, displayedQuestionIndices]);
 
     const handleNextQuestion = () => {
-        setCurrentQuestionIndex(prevIndex => (prevIndex + 1) % displayedQuestions.length);
+        if (displayedQuestionIndices.size < questions.length) {
+            let nextIndex;
+            do {
+                nextIndex = Math.floor(Math.random() * questions.length);
+            } while (displayedQuestionIndices.has(nextIndex)); // Trouver un index qui n'a pas encore été affiché
+            setCurrentQuestionIndex(nextIndex);
+            setDisplayedQuestionIndices(new Set(displayedQuestionIndices).add(nextIndex)); // Ajouter le nouvel index au set des indices des questions affichées
+        } else {
+            setAllQuestionsDisplayed(true);
+        }
         setTimeLeft(180); // Réinitialiser le temps restant à 180 secondes (3 minutes) lors du passage à la question suivante
     };
 
-    const currentQuestion = displayedQuestions[currentQuestionIndex];
+    const handleChangeCategory = (e) => {
+        setSelectedCategory(e.target.value);
+    };
+
+    const currentQuestion = questions[currentQuestionIndex];
 
     return (
         <div>
