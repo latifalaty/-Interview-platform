@@ -25,6 +25,7 @@ import InterviewForm from "./components/context/InterviewForm";
 import ApplicantsList from "./components/Applicantslist";
 import ApplicantAnalysis from "./components/Aplicantanalysis";
 import InterviewNotifications from "./components/Interviews";
+import Offerslist from "./components/Offerlist";
 
 function App() {
 
@@ -75,7 +76,7 @@ function App() {
             <Routes>
             <Route path="/applicantanalysis" element={<ApplicantAnalysis />} />
             <Route path="/applicantlist" element={<ApplicantsList />} />
-              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/dash" element={<Dashboard />} />
               <Route path="*" element={<Error />} />
@@ -86,6 +87,7 @@ function App() {
               <Route path="/call" element={<LobbyScreen />} />
               <Route path="/room/:roomId" element={<RoomPage />} />
               <Route path="/offers" element={<Offers />} />
+              <Route path="/" element={<Offerslist />} />
               <Route path="/entretien" element={<Entretien />} />
               <Route path="/offercategory" element={<OffersByCategory />} />
               <Route path="/questionsreponses" element={<QuestionReponse />} />

@@ -1,4 +1,3 @@
-// Dans votre composant React (par exemple, EmotionComponent.js)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';

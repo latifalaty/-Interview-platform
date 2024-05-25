@@ -1,0 +1,125 @@
+.offers-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.offers-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.offer-card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.offer-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.offer-title {
+    font-size: 24px;
+    color: #0073b1;
+    margin-bottom: 10px;
+}
+
+.offer-description {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.offer-salary,
+.offer-domain {
+    font-size: 14px;
+    color: #777;
+}
+
+.offer-salary {
+    margin-bottom: 5px;
+}
+/* Style général */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+  }
+  
+  h1 {
+    margin-bottom: 20px;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  /* Style de la liste des candidats */
+  .applicants-list {
+    margin-bottom: 40px;
+  }
+  
+  .applicant-item {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .applicant-details {
+    margin-bottom: 10px;
+  }
+  
+  .cv-iframe {
+    width: 100%;
+    height: 400px;
+  }
+  
+  /* Style du formulaire de planification d'entrevue */
+  .interview-form {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+  }
+  
+  .interview-form label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  .interview-form input[type="date"],
+  .interview-form input[type="text"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .interview-form button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .interview-form button:hover {
+    background-color: #0056b3;
+  }
+  

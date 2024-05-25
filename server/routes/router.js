@@ -232,12 +232,12 @@ router.get('/questions', async (req, res) => {
 
 // Create a question
 router.post('/createquestion', async (req, res) => {
-    const { question, reponse,category } = req.body;
+    const { question, reponse,domain } = req.body;
 
     const newQuestion = new QuestionReponse({
         question,
         reponse,
-        category
+        domain
     });
 
     try {
@@ -250,9 +250,9 @@ router.post('/createquestion', async (req, res) => {
 
 // Update a question
 router.put('/api/question/:id', async (req, res) => {
-    const { question, reponse,category } = req.body;
+    const { question, reponse,domain } = req.body;
     try {
-        const updatedQuestion = await QuestionReponse.findByIdAndUpdate(req.params.id, { question, reponse,category }, { new: true });
+        const updatedQuestion = await QuestionReponse.findByIdAndUpdate(req.params.id, { question, reponse,domain }, { new: true });
         res.json(updatedQuestion);
     } catch (err) {
         console.log(err);
@@ -418,19 +418,20 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors du traitement des vidéos.' });
     }
 });
-
-//make interview
+// Créer une entrevue
 router.post('/schedule', async (req, res) => {
     try {
-      const { date, link } = req.body;
-      const interview = new Interview({ date, link });
-      await interview.save();
-      res.status(201).json({ message: 'Interview scheduled successfully' });
+        const { email, date, link, domain, roomnumber } = req.body; // Ajout de l'e-mail du candidat et du numéro de salle
+        const interview = new Interview({ email, date, link, domain, roomnumber }); // Création de l'objet d'entrevue avec l'e-mail, le domaine et le numéro de salle
+        await interview.save(); // Enregistrement de l'entrevue dans la base de données
+        res.status(201).json({ message: 'Interview scheduled successfully', interview });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Failed to schedule interview' });
+        console.error(error);
+        res.status(500).json({ message: 'Failed to schedule interview' });
     }
-  });
+});
+
+
   router.get('/interviews', async (req, res) => {
     try {
       // Fetch all interviews from the database
@@ -535,15 +536,23 @@ router.post('/analyze-applicants', async (req, res) => {
     }
 });
 
-//affichage applicant
+// GET /applicants - Retrieve all applicants with offer domains
 router.get('/applicants', async (req, res) => {
     try {
-      const applicants = await Applicant.find();
+      // Fetch all applicants and populate the offerId with only the domain field
+      const applicants = await Applicant.find().populate('offerId', 'domain');
+      
+      // Send the retrieved applicants as a JSON response
       res.json(applicants);
     } catch (err) {
-      res.status(500).json({ message: err.message });
+      // Log the error for debugging purposes
+      console.error('Error fetching applicants:', err);
+  
+      // Send a 500 Internal Server Error status with the error message
+      res.status(500).json({ message: 'Server error: Unable to fetch applicants' });
     }
   });
+  
 //afficher les videos recordé
   router.get('/videos', async (req, res) => {
     try {
@@ -585,6 +594,41 @@ router.get('/emotion', async (req, res) => {
         res.status(500).send('Erreur serveur');
     }
 });
+//affichage des offres :
+router.get('/offers', async (req, res) => {
+    try {
+        const offers = await Offer.find();
+        res.json(offers);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// Route pour récupérer les questions du domaine en fonction de l'email
+router.get('/questions/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        console.log(`Fetching interview for email: ${email}`);
 
+        // Recherche de l'interview correspondant à l'email
+        const interview = await Interview.findOne({ email });
+
+        if (!interview) {
+            console.log("Interview not found for email:", email);
+            return res.status(404).json({ message: "Interview not found" });
+        }
+
+        console.log(`Interview found: ${JSON.stringify(interview)}`);
+
+        // Recherche des questions correspondant au domaine de l'interview
+        const questions = await QuestionReponse.find({ domain: interview.domain });
+
+        console.log(`Questions found: ${JSON.stringify(questions)}`);
+
+        res.json(questions);
+    } catch (error) {
+        console.error("Error fetching domain questions:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
 
 module.exports = router;

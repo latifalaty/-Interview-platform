@@ -6,12 +6,12 @@ const QuestionReponse = () => {
     const [questions, setQuestions] = useState([]);
     const [question, setQuestion] = useState('');
     const [reponse, setReponse] = useState('');
-    const [category, setCategory] = useState('');
+    const [domain, setDomain] = useState('');
     const [editingQuestionId, setEditingQuestionId] = useState(null);
     const [showForm, setShowForm] = useState(false); // État pour contrôler l'affichage du formulaire
 
-    // Liste des catégories disponibles
-    const categories = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
+    // Liste des domaines disponibles
+    const domains = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
 
     useEffect(() => {
         fetchQuestions();
@@ -29,21 +29,21 @@ const QuestionReponse = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (editingQuestionId) {
-            await axios.put(`http://localhost:8009/api/question/${editingQuestionId}`, { question, reponse, category });
+            await axios.put(`http://localhost:8009/api/question/${editingQuestionId}`, { question, reponse, domain });
             setEditingQuestionId(null);
         } else {
-            await axios.post('http://localhost:8009/createquestion', { question, reponse, category });
+            await axios.post('http://localhost:8009/createquestion', { question, reponse, domain });
         }
         setQuestion('');
         setReponse('');
-        setCategory('');
+        setDomain('');
         fetchQuestions();
     };
 
     const handleEdit = (question) => {
         setQuestion(question.question);
         setReponse(question.reponse);
-        setCategory(question.category);
+        setDomain(question.domain);
         setEditingQuestionId(question._id);
     };
 
@@ -69,10 +69,10 @@ const QuestionReponse = () => {
                         <textarea className="form-control" rows="3" placeholder="Answer" value={reponse} onChange={(e) => setReponse(e.target.value)}></textarea>
                     </div>
                     <div className="form-group">
-                        <select className="form-control" value={category} onChange={(e) => setCategory(e.target.value)}>
-                            <option value="">Select Category</option>
-                            {categories.map((cat, index) => (
-                                <option key={index} value={cat}>{cat}</option>
+                        <select className="form-control" value={domain} onChange={(e) => setDomain(e.target.value)}>
+                            <option value="">Select Domain</option>
+                            {domains.map((dom, index) => (
+                                <option key={index} value={dom}>{dom}</option>
                             ))}
                         </select>
                     </div>
@@ -85,7 +85,7 @@ const QuestionReponse = () => {
                     <li key={question._id} className="list-group-item">
                         <h3>{question.question}</h3>
                         <p>{question.reponse}</p>
-                        <p><strong>Category:</strong> {question.category}</p>
+                        <p><strong>Domain:</strong> {question.domain}</p>
                         <button onClick={() => handleEdit(question)} className="btn btn-primary mr-2">Edit</button>
                         <button onClick={() => handleDelete(question._id)} className="btn btn-danger">Delete</button>
                  

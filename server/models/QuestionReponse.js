@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Définition du schéma de la collection QuestionRéponse
 const questionReponseSchema = new mongoose.Schema({
-    category: {
+    domain: {
         type: String,
         required: true
     },
