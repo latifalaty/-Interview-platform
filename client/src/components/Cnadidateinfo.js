@@ -73,15 +73,13 @@ const EmailData = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.header}>Les données extraites de chaque candidat </h1>
+      <h1 style={styles.header}>Les données extraites de chaque candidat aprés l'entretien </h1>
       {Object.keys(data).map(email => (
         <div key={email} style={styles.emailSection}>
           <h2 style={styles.emailHeader}> Candidat qui correspond a l'email: {email}</h2>
           <div style={styles.section}>
             <h3 style={styles.subHeader}>Result of the Interview Analysis</h3>
             <div>
-              <p><strong>ID:</strong> {data[email].candidateData._id}</p>
-              <p><strong>Email:</strong> {data[email].candidateData.email}</p>
               <p><strong>Extracted Text:</strong> {parseExtractedText(data[email].candidateData.extractedText)}</p>
             </div>
           </div>

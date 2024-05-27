@@ -5,6 +5,7 @@ import CvAnalysisComponent from './Cvanalyse';
 import CandidateDataComponent from './Analysevideo';
 import ApplicantsList from './Applicantslist';
 import EmotionComponent from './Lesemotions';
+import EmailData from './Cnadidateinfo';
 
 const RecruteurComponent = () => {
     return (<div>
@@ -21,8 +22,7 @@ const RecruteurComponent = () => {
         <body>
             <h1> Dashbord</h1>
             <ApplicantsList />
-            <CvAnalysisComponent />
-                <CandidateDataComponent/>
+         <EmailData/>
                 <EmotionComponent/>
         </body>
         </div>

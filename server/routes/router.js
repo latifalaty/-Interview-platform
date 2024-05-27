@@ -352,18 +352,18 @@ router.post('/analyse', async (req, res) => {
         const pythonProcess = spawn('python', ['extract_audio_and_text.py', videoUrl]);
 
         let extractedText = '';
-        let extractedFaceImage = '';
 
         const processFinished = new Promise((resolve, reject) => {
             pythonProcess.stdout.on('data', async (data) => {
                 const message = data.toString();
                 console.log('Message from Python:', message);
 
-                if (message.includes('Texte extrait:')) {
-                    const extractedTextIndex = message.indexOf('Texte extrait:') + 'Texte extrait:'.length;
-                    extractedText = message.substring(extractedTextIndex).trim();
-
+                if (message.includes('{"extracted_text":')) {
                     try {
+                        const jsonString = message.substring(message.indexOf('{"extracted_text":'));
+                        const result = JSON.parse(jsonString);
+                        extractedText = result.extracted_text;
+
                         const candidateData = new CandidateData({
                             email: email,
                             extractedText: extractedText,
@@ -371,10 +371,8 @@ router.post('/analyse', async (req, res) => {
                         await candidateData.save();
                         console.log('Données du candidat enregistrées avec succès.');
                     } catch (error) {
-                        console.error('Erreur lors de l\'enregistrement des données:', error);
+                        console.error('Erreur lors de l\'analyse du JSON ou de l\'enregistrement des données:', error);
                     }
-                } else if (message.includes('Image du visage détecté:')) {
-                    extractedFaceImage = message.split(':')[1].trim();
                 }
             });
 
@@ -394,30 +392,61 @@ router.post('/analyse', async (req, res) => {
 
         await processFinished;
 
-        if (extractedFaceImage) {
-            try {
-                const data = await fs.readFile(extractedFaceImage);
-                const updatedCandidateData = await CandidateData.findOneAndUpdate(
-                    { email: email },
-                    { faceImage: { data: data, contentType: 'image/jpeg' } },
-                    { new: true, upsert: true }
-                );
-
-                console.log('Données du candidat mises à jour avec l\'image du visage:', updatedCandidateData);
-
-                await fs.unlink(extractedFaceImage);
-                console.log('Fichier de l\'image du visage extrait supprimé avec succès.');
-            } catch (err) {
-                console.error('Erreur lors de la lecture ou de la suppression du fichier d\'image du visage:', err);
-            }
-        }
-
-        res.status(200).json({ message: 'Traitement vidéo terminé.' });
+        res.status(200).json({ message: 'Traitement vidéo terminé.', extractedText: extractedText });
     } catch (error) {
         console.error('Erreur lors du traitement des vidéos:', error);
         res.status(500).json({ error: 'Erreur lors du traitement des vidéos.' });
     }
 });
+// Récupérer les données d'émotions
+router.get('/emotionanalyse', async (req, res) => {
+    try {
+      const data = await emotionSchema.find({});
+      const emotionPercentagesByEmail = {};
+  
+      // Traitement des données d'émotions
+      data.forEach(entry => {
+        const email = entry.email;
+        const emotions = entry.emotions;
+  
+        if (email && emotions) {
+          if (!emotionPercentagesByEmail[email]) {
+            emotionPercentagesByEmail[email] = {};
+          }
+  
+          emotions.forEach(emotionObj => {
+            const emotion = emotionObj.emotion;
+            const percentage = emotionObj.percentage;
+  
+            if (!emotionPercentagesByEmail[email][emotion]) {
+              emotionPercentagesByEmail[email][emotion] = 0;
+            }
+  
+            emotionPercentagesByEmail[email][emotion] += percentage;
+          });
+        }
+      });
+  
+      // Format de réponse
+      const responseData = Object.entries(emotionPercentagesByEmail).map(([email, percentages]) => ({
+        email: email,
+        mainEmotions: Object.entries(percentages)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 2)
+          .map(([emotion, percentage]) => ({ emotion, percentage })),
+        otherEmotions: Object.entries(percentages)
+          .sort((a, b) => b[1] - a[1])
+          .slice(2, 6)
+          .map(([emotion, percentage]) => ({ emotion, percentage }))
+      }));
+  
+      res.json(responseData);
+    } catch (err) {
+      console.error('Erreur lors de la récupération des données d\'émotions :', err);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
 
 // Créer une entrevue
 router.post('/schedule', async (req, res) => {
@@ -663,6 +692,41 @@ router.get('/data-by-email', async (req, res) => {
     } catch (err) {
         console.error('Error fetching data:', err);
         res.status(500).send('Internal Server Error');
+    }
+});
+//classificcation finale 
+router.post('/analyze-data', async (req, res) => {
+    try {
+        // Récupérer les données d'analyse de CV depuis la base de données
+        const cvData = await CvAnalysis.find({}, 'email extractedText');
+        
+        // Récupérer les données d'analyse de la vidéo du candidat depuis la base de données
+        const videoData = await CandidateData.find({}, 'email extractedText');
+
+        // Concaténer les deux ensembles de données
+        const combinedData = [...cvData, ...videoData];
+
+        // Exécuter le script Python avec spawn
+        const pythonProcess = spawn('python', ['Classifiervideocv.py']);
+
+        // Gérer les sorties du processus Python
+        pythonProcess.stdout.on('data', (data) => {
+            console.log('Résultats du script Python :', data.toString());
+            res.json({ results: data.toString() }); // Envoyer les résultats au client
+        });
+
+        // Gérer les erreurs de processus Python
+        pythonProcess.stderr.on('data', (data) => {
+            console.error('Erreur lors de l\'exécution du script Python :', data.toString());
+            res.status(500).json({ error: 'Erreur lors de l\'exécution du script Python' });
+        });
+
+        // Envoyer les données au script Python
+        pythonProcess.stdin.write(JSON.stringify(combinedData));
+        pythonProcess.stdin.end();
+    } catch (err) {
+        console.error('Erreur lors de la récupération des données d\'analyse :', err);
+        res.status(500).json({ error: 'Erreur lors de la récupération des données d\'analyse' });
     }
 });
 module.exports = router;

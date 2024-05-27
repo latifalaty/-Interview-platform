@@ -1,43 +1,52 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const EmotionComponent = () => {
-    const [emotionData, setEmotionData] = useState([]);
+const EmotionList = () => {
+  const [emotions, setEmotions] = useState([]);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get('/emotion');
-                setEmotionData(response.data);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des données d\'émotion : ', error);
-            }
-        };
-        fetchData();
-    }, []);
+  useEffect(() => {
+    const fetchEmotions = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8009/emotionanalyse');
+        setEmotions(response.data);
+      } catch (error) {
+        console.error('Error fetching emotions:', error);
+      }
+    };
 
-    return (
-        <div>
-            <h1>Données d'émotion</h1>
+    fetchEmotions();
+  }, []);
+
+  return (
+    <div>
+      {emotions.map((emotionData, index) => (
+        <div key={index}>
+    <h4>Analyse des emotions des candidats </h4>
+          <h4>Email: {emotionData.email}</h4>
+          <div>
+            <h3>Deux émotions principales :</h3>
             <ul>
-                {emotionData.map(emotion => (
-                    <li key={emotion._id}>
-                        <p>Email: {emotion.email}</p>
-                        <p>Timestamp: {new Date(emotion.timestamp).toLocaleString()}</p>
-                        <p>Emotions:</p>
-                        <ul>
-                            {emotion.emotions.map((item, index) => (
-                                <li key={index}>
-                                    <p>{item.emotion}: {item.percentage}%</p>
-                                </li>
-                            ))}
-                        </ul>
-                    </li>
-                ))}
+              {emotionData.mainEmotions.map((emotion, index) => (
+                <li key={index}>
+                  {emotion.emotion}: {emotion.percentage}%
+                </li>
+              ))}
             </ul>
+          </div>
+          <div>
+            <h3>Quatre autres émotions :</h3>
+            <ul>
+              {emotionData.otherEmotions.map((emotion, index) => (
+                <li key={index}>
+                  {emotion.emotion}: {emotion.percentage}%
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-    );
+      ))}
+    </div>
+  );
 };
 
-export default EmotionComponent;
+export default EmotionList;
