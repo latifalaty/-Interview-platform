@@ -336,7 +336,8 @@ router.get('/questions/:category', async (req, res) => {
         console.error("Error fetching questions:", error);
         res.status(500).json({ error: "Server error" });
     }
-});router.post('/analyse', async (req, res) => {
+});
+router.post('/analyse', async (req, res) => {
     try {
         // Recherche de la dernière vidéo créée
         const video = await VideoRecord.findOne({}).sort({ createdAt: -1 });
@@ -359,14 +360,13 @@ router.get('/questions/:category', async (req, res) => {
                 console.log('Message from Python:', message);
 
                 if (message.includes('Texte extrait:')) {
-                    extractedText += message;
-                    const extractedTextIndex = extractedText.indexOf('Texte extrait:') + 'Texte extrait:'.length;
-                    const extractedTextContent = extractedText.substring(extractedTextIndex).trim();
+                    const extractedTextIndex = message.indexOf('Texte extrait:') + 'Texte extrait:'.length;
+                    extractedText = message.substring(extractedTextIndex).trim();
 
                     try {
                         const candidateData = new CandidateData({
                             email: email,
-                            extractedText: extractedTextContent,
+                            extractedText: extractedText,
                         });
                         await candidateData.save();
                         console.log('Données du candidat enregistrées avec succès.');
@@ -418,6 +418,7 @@ router.get('/questions/:category', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors du traitement des vidéos.' });
     }
 });
+
 // Créer une entrevue
 router.post('/schedule', async (req, res) => {
     try {
@@ -604,9 +605,9 @@ router.get('/offers', async (req, res) => {
     }
 });
 // Route pour récupérer les questions du domaine en fonction de l'email
-router.get('/questions/:email', async (req, res) => {
+router.get('/question', async (req, res) => {
     try {
-        const { email } = req.params;
+        const email="latylaty712@gmail.com"
         console.log(`Fetching interview for email: ${email}`);
 
         // Recherche de l'interview correspondant à l'email
@@ -630,5 +631,38 @@ router.get('/questions/:email', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+//infoanalyser pour chaque candidat
+router.get('/data-by-email', async (req, res) => {
+    try {
+        // Fetch all candidate data
+        const candidateDataList = await CandidateData.find();
+        // Fetch all CV analysis data
+        const cvAnalysisList = await CvAnalysis.find();
 
+        // Create a map to store information by email
+        const dataByEmail = {};
+
+        // Populate dataByEmail with candidate data
+        candidateDataList.forEach(candidate => {
+            if (!dataByEmail[candidate.email]) {
+                dataByEmail[candidate.email] = {};
+            }
+            dataByEmail[candidate.email].candidateData = candidate;
+        });
+
+        // Populate dataByEmail with CV analysis data
+        cvAnalysisList.forEach(cvAnalysis => {
+            if (!dataByEmail[cvAnalysis.email]) {
+                dataByEmail[cvAnalysis.email] = {};
+            }
+            dataByEmail[cvAnalysis.email].cvAnalysis = cvAnalysis;
+        });
+
+        // Send the aggregated data as JSON response
+        res.json(dataByEmail);
+    } catch (err) {
+        console.error('Error fetching data:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
 module.exports = router;

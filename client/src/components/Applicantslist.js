@@ -63,11 +63,11 @@ const ApplicantsList = () => {
       
       {selectedApplicant && (
         <div className="interview-form">
-          <h2>Planifier une entrevue pour {selectedApplicant.email}</h2>
-          <label>Date de l'entrevue:</label>
+          <h2>Planifier un interview pour {selectedApplicant.email}</h2>
+          <label>Date de l'interview:</label>
           <input type="date" value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} />
           <br />
-          <label>Lien de l'entrevue:</label>
+          <label>Lien de l'interview:</label>
           <input type="text" value={interviewLink} onChange={(e) => setInterviewLink(e.target.value)} />
           <br />
           <label>Numéro de salle:</label> {/* Champ pour le numéro de salle */}

@@ -26,6 +26,7 @@ import ApplicantsList from "./components/Applicantslist";
 import ApplicantAnalysis from "./components/Aplicantanalysis";
 import InterviewNotifications from "./components/Interviews";
 import Offerslist from "./components/Offerlist";
+import EmailData from "./components/Cnadidateinfo";
 
 function App() {
 
@@ -95,6 +96,7 @@ function App() {
               <Route path="/analyse" element={<Analyse/>} />
               <Route path="/makeinterview" element={<InterviewForm/>} />
               <Route path="/interviews" element={<InterviewNotifications/>} />
+              <Route path="/candidateinfo" element={<EmailData/>} />
             </Routes>
           </>
 
