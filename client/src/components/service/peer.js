@@ -1,4 +1,4 @@
-class PeerService {
+/*class PeerService {
   constructor() {
     if (!this.peer) {
       this.peer = new RTCPeerConnection({
@@ -38,4 +38,36 @@ class PeerService {
   }
 }
 
-export default new PeerService();
+export default new PeerService();*/
+
+const { RTCPeerConnection, RTCSessionDescription } = window;
+
+class Peer {
+  constructor() {
+    this.peer = new RTCPeerConnection();
+  }
+
+  async getOffer() {
+    const offer = await this.peer.createOffer();
+    await this.peer.setLocalDescription(new RTCSessionDescription(offer));
+    return offer;
+  }
+
+  async getAnswer(offer) {
+    await this.peer.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await this.peer.createAnswer();
+    await this.peer.setLocalDescription(new RTCSessionDescription(answer));
+    return answer;
+  }
+
+  async setRemoteDescription(desc) {
+    await this.peer.setRemoteDescription(new RTCSessionDescription(desc));
+  }
+
+  async setLocalDescription(desc) {
+    await this.peer.setLocalDescription(new RTCSessionDescription(desc));
+  }
+}
+
+const peerInstance = new Peer();
+export default peerInstance;

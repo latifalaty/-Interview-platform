@@ -62,10 +62,7 @@ def extract_text_from_audio(segment):
         print(f"Erreur: La demande de reconnaissance a échoué; {e}")
     except Exception as e:
         print(f"Une erreur s'est produite: {str(e)}")
-    finally:
-        if os.path.exists("output_audio.wav"):
-            os.remove("output_audio.wav")
-    return None
+   
 
 def clean_text(text):
     text = text.lower()

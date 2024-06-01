@@ -18,10 +18,15 @@ const RoomPage = () => {
   const videoRecorder = useReactMediaRecorder({ screen: true });
   const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
+  const [showQuestion, setShowQuestion] = useState(false);
+
+
   const recordVideo = useCallback(() => {
     videoRecorder.startRecording();
     alert("Recording started");
+    setShowQuestion(true); // Affiche le composant AfficherQuestion
   }, [videoRecorder]);
+  
 
   const stopRecording = async () => {
     try {
@@ -33,20 +38,31 @@ const RoomPage = () => {
         const response = await fetch(videoUrl);
         const videoBlob = await response.blob();
         const myFile = new File([videoBlob], "demo.mp4", { type: 'video/mp4' });
-  
+
         // Envoi du fichier au backend
         const formData = new FormData();
         formData.append('email', email);
         formData.append('video', myFile); // Ajoutez le fichier à FormData
-  
+
         await axios.post('http://localhost:8009/api/video-record', formData, {
           headers: {
             'Content-Type': 'multipart/form-data' // Assurez-vous que le type de contenu est défini sur 'multipart/form-data'
           }
         });
-  
+
         alert('Video recorded successfully ');
-        await axios.post('http://localhost:8009/analyse');
+        while (true) {
+          try {
+              await axios.post('http://localhost:8009/analyse');
+              console.log('Requête envoyée avec succès.');
+          } catch (error) {
+              console.error('Erreur lors de la requête :', error);
+              // Vous pouvez ajuster la gestion des erreurs selon vos besoins
+          }
+
+          // Ajoutez une pause pour éviter de surcharger le serveur
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Attendre 1 seconde
+        }
       } else {
         console.error('No recorded video available');
       }
@@ -54,36 +70,36 @@ const RoomPage = () => {
       console.error(error);
     }
   };
-  
-  const handleDownload = () => {
-    if (recordedVideoUrl) {
-      const link = document.createElement('a');
-      link.href = recordedVideoUrl;
-      link.setAttribute('download', 'video.mp4');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      console.error('No recorded video available for download');
-    }
-  };
-  
 
+  const handleDisconnect = useCallback(() => {
+    // Actions à effectuer lors de la déconnexion
+    setMyStream(null);
+    setRemoteSocketId(null);
+    setIsConnected(false);
+    // Autres actions de nettoyage peuvent être ajoutées ici
+  }, []);
+  
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
     setRemoteSocketId(id);
     setIsConnected(true);
+    handleCallUser();
   }, []);
 
-  const handleCallUser = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: true,
-    });
-    const offer = await peer.getOffer();
-    socket.emit("user:call", { to: remoteSocketId, offer });
-    setMyStream(stream);
-  }, [remoteSocketId, socket]);
+  const handleCallUser = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      setMyStream(stream);
+
+      const offer = await peer.getOffer();
+      socket.emit("user:call", { to: remoteSocketId, offer });
+    } catch (error) {
+      console.error("Error initiating call:", error);
+    }
+  };
 
   const handleIncommingCall = useCallback(
     async ({ from, offer }) => {
@@ -93,7 +109,6 @@ const RoomPage = () => {
         video: true,
       });
       setMyStream(stream);
-      console.log(`Incoming Call`, from, offer);
       const ans = await peer.getAnswer(offer);
       socket.emit("call:accepted", { to: from, ans });
     },
@@ -115,8 +130,7 @@ const RoomPage = () => {
 
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
-      peer.setLocalDescription(ans);
-      console.log("Call Accepted!");
+      peer.setRemoteDescription(ans);
       sendStreams();
     },
     [sendStreams]
@@ -127,10 +141,21 @@ const RoomPage = () => {
     socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
   }, [remoteSocketId, socket]);
 
+  const initMyStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      setMyStream(stream);
+    } catch (error) {
+      console.error("Error initializing local stream:", error);
+    }
+  };
+
   useEffect(() => {
-    // Start call when component mounts
-    handleCallUser();
-  }, [handleCallUser]);
+    initMyStream();
+  }, []);
 
   useEffect(() => {
     peer.peer.addEventListener("negotiationneeded", handleNegoNeeded);
@@ -148,14 +173,12 @@ const RoomPage = () => {
   );
 
   const handleNegoNeedFinal = useCallback(async ({ ans }) => {
-    await peer.setLocalDescription(ans);
+    await peer.setRemoteDescription(ans);
   }, []);
 
   useEffect(() => {
-    peer.peer.addEventListener("track", async (ev) => {
-      const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!");
-      setRemoteStream(remoteStream[0]);
+    peer.peer.addEventListener("track", (ev) => {
+      setRemoteStream(ev.streams[0]);
     });
   }, []);
 
@@ -181,7 +204,7 @@ const RoomPage = () => {
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
   ]);
-
+  
   return (
     <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr" }}>
       <h2>welcome to the room</h2>
@@ -198,22 +221,23 @@ const RoomPage = () => {
           </div>
         )}
       
-        {/* Affichage de la vidéo locale */}
-        {myStream && (
-          <div>
-            <h1>My Stream</h1>
-            <div style={{ display: 'flex' }}>
+       {/* Affichage de la vidéo locale */}
+{myStream && (
+  <div>
+    <h1>My Stream</h1>
+    <div style={{ display: 'flex' }}>
       <div style={{ flex: 1, marginRight: '20px' }}>
         <Video url={myStream} />
       </div>
-      <div style={{ flex: 1, marginLeft: '20px',marginTop:'20%' }}>
-        <OfferQuestions/>
+      <div style={{ flex: 1, marginLeft: '20px', marginTop: '20%' }}>
+        {showQuestion && <OfferQuestions/>} 
       </div>
     </div>
-          </div>
-        )}
+  </div>
+)}
+
       </div>
-  
+      
       <div style={{ textAlign: "center", marginTop: "50px", width: "50%", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr" }}>
         {/* Boutons de déconnexion */}
         <div style={{ marginBottom: "20px" }}>
@@ -269,15 +293,14 @@ const RoomPage = () => {
               <span>Stop Recording</span>
             </button>
           </div>
-     
         </div>}
-       {/* Affichage de la vidéo enregistrée si elle existe */}
-       {recordedVideoUrl && (
-        <div>
-          <h1>Recorded Video</h1>
-          <video controls src={recordedVideoUrl} style={{ width: "100%", maxHeight: "80%" }} />
-        </div>
-      )}
+        {/* Affichage de la vidéo enregistrée si elle existe */}
+        {recordedVideoUrl && (
+          <div>
+            <h1>Recorded Video</h1>
+            <video controls src={recordedVideoUrl} style={{ width: "100%", maxHeight: "80%" }} />
+          </div>
+        )}
       </div>
     </div>
   );
