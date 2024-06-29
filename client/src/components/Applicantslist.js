@@ -43,37 +43,37 @@ const ApplicantsList = () => {
 
   return (
     <div className="container">
-      <h1>Liste des Candidats</h1>
+      <h1>Liste of Candidats</h1>
       <ul className="applicants-list">
         {applicants.map(applicant => (
           <li key={applicant._id} className="applicant-item">
             <div className="applicant-details">
               <strong>Email :</strong> {applicant.email}
               <br />
-              <strong>Domaine de l'offre :</strong> {applicant.offerId ? applicant.offerId.domain : 'N/A'}
+              <strong>Domaine of the offre :</strong> {applicant.offerId ? applicant.offerId.domain : 'N/A'}
             </div>
             <div className="cv-container">
               <strong>CV :</strong>
               <iframe title="CV" src={applicant.cv} className="cv-iframe"></iframe>
             </div>
-            <button onClick={() => setSelectedApplicant(applicant)} style={{ backgroundColor: '#007bff', color: '#fff', border: 'none', padding: '10px 20px', cursor: 'pointer', borderRadius: '5px' }}>Planifier une interview</button>
+            <button onClick={() => setSelectedApplicant(applicant)} style={{ backgroundColor: '#007bff', color: '#fff', border: 'none', padding: '10px 20px', cursor: 'pointer', borderRadius: '5px' }}>Make interview</button>
           </li>
         ))}
       </ul>
       
       {selectedApplicant && (
         <div className="interview-form">
-          <h2>Planifier un interview pour {selectedApplicant.email}</h2>
-          <label>Date de l'interview:</label>
+          <h2>Make interview for {selectedApplicant.email}</h2>
+          <label>Date interview:</label>
           <input type="date" value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} />
           <br />
-          <label>Lien de l'interview:</label>
+          <label>Lien of the interview:</label>
           <input type="text" value={interviewLink} onChange={(e) => setInterviewLink(e.target.value)} />
           <br />
-          <label>Numéro de salle:</label> {/* Champ pour le numéro de salle */}
+          <label>The room number:</label> {/* Champ pour le numéro de salle */}
           <input type="text" value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} />
           <br />
-          <button onClick={handleScheduleInterview}>Planifier</button>
+          <button onClick={handleScheduleInterview}>Make interview</button>
         </div>
       )}
     </div>

@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './classifier.css'; // Import the CSS file
 
 const EmotionList = () => {
   const [emotions, setEmotions] = useState([]);
@@ -19,12 +21,12 @@ const EmotionList = () => {
 
   return (
     <div>
+      <h1>Candidates emotion analysis</h1>
       {emotions.map((emotionData, index) => (
         <div key={index}>
-    <h4>Analyse des emotions des candidats </h4>
           <h4>Email: {emotionData.email}</h4>
           <div>
-            <h3>Deux émotions principales :</h3>
+            <h3>Principle emotions :</h3>
             <ul>
               {emotionData.mainEmotions.map((emotion, index) => (
                 <li key={index}>
@@ -34,7 +36,7 @@ const EmotionList = () => {
             </ul>
           </div>
           <div>
-            <h3>Quatre autres émotions :</h3>
+            <h3>Other emotions :</h3>
             <ul>
               {emotionData.otherEmotions.map((emotion, index) => (
                 <li key={index}>

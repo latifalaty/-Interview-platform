@@ -84,7 +84,6 @@ const Register = () => {
                 <div className="form_data">
                     <div className="form_heading">
                         <h1>Sign Up</h1>
-                        <h2>Welcome to the Mern app</h2>
                     </div>
 
                     <form>

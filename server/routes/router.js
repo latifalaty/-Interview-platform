@@ -729,4 +729,57 @@ router.post('/analyze-data', async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la récupération des données d\'analyse' });
     }
 });
+router.get('/classify', async (req, res) => {
+    try {
+        const cvAnalysisData = await CvAnalysis.find().select('applicantId email extractedText').exec();
+        const candidateData = await CandidateData.find().select('email extractedText').exec();
+
+        const cvVideoPairs = cvAnalysisData.map(cv => {
+            const correspondingCandidate = candidateData.find(candidate => candidate.email === cv.email);
+            return {
+                cv_id: cv._id,
+                cv_email: cv.email,
+                video_id: correspondingCandidate ? correspondingCandidate._id : null,
+                video_email: correspondingCandidate ? correspondingCandidate.email : '',
+                cv_text: JSON.stringify(cv.extractedText),
+                video_text: correspondingCandidate ? JSON.stringify(correspondingCandidate.extractedText) : ''
+            };
+        });
+
+        fs.writeFileSync('cv_video_pairs.json', JSON.stringify(cvVideoPairs, null, 2), 'utf-8');
+
+        const pythonProcess = spawn('python', ['Classifiervideocv.py']);
+
+        let dataString = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            dataString += data.toString();
+        });
+
+        pythonProcess.stdout.on('end', () => {
+            try {
+                const classifiedPairs = JSON.parse(dataString);
+                res.json(classifiedPairs);
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+                res.status(500).send('Error parsing JSON');
+            }
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`stderr: ${data}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code !== 0) {
+                res.status(500).send('Error executing Python script');
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving data:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 module.exports = router;

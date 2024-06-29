@@ -12,7 +12,7 @@ const Offers = () => {
     const [showForm, setShowForm] = useState(false); // État pour contrôler l'affichage du formulaire
 
     // Liste des catégories disponibles
-    const domains = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
+    const domains = ['IT', 'Finance', 'Marketing', 'Sales', 'HR'];
 
     useEffect(() => {
         fetchOffers();

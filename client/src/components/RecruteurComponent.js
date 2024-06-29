@@ -6,6 +6,7 @@ import CandidateDataComponent from './Analysevideo';
 import ApplicantsList from './Applicantslist';
 import EmotionComponent from './Lesemotions';
 import EmailData from './Cnadidateinfo';
+import CVVideoClassifier from './Classifyvideo';
 
 const RecruteurComponent = () => {
     return (<div>
@@ -22,8 +23,10 @@ const RecruteurComponent = () => {
         <body>
             <h1> Dashbord</h1>
             <ApplicantsList />
-         <EmailData/>
+       
                 <EmotionComponent/>
+                <CVVideoClassifier/>
+                <EmailData/>
         </body>
         </div>
     );
