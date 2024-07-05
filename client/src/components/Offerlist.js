@@ -6,7 +6,7 @@ import './Offerslist.css';
 const Offerslist = () => {
     const [offers, setOffers] = useState([]);
     const [fileInput, setFileInput] = useState(null);
-    const userEmail = localStorage.getItem('usermail');
+    const userEmail = localStorage.getItem('userEmail');
     const [successMessage, setSuccessMessage] = useState('');
     const navigate = useNavigate(); // Initialize useNavigate
 

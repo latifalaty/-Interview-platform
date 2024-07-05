@@ -7,7 +7,7 @@ const OffersByDomain = () => {
     const [fileInput, setFileInput] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
     const domains = ['IT', 'Finance', 'Marketing', 'Engineering', 'Sales', 'HR'];
-    const userEmail = localStorage.getItem('usermail');
+    const userEmail = localStorage.getItem('userEmail');
 
     useEffect(() => {
         if (selectedDomain) {

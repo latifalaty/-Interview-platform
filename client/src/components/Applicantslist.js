@@ -36,6 +36,7 @@ const ApplicantsList = () => {
         roomnumber: roomNumber // Ajout du numéro de salle
       });
       console.log(response.data.message);
+      alert('Interview scheduled successfully!'); // Ajout de l'alerte
     } catch (error) {
       console.error('Failed to schedule interview:', error);
     }

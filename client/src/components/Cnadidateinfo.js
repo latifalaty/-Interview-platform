@@ -73,33 +73,33 @@ const EmailData = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.header}>Les données extraites de chaque candidat aprés l'entretien </h1>
+      <h1 style={styles.header}>Les données extraites de chaque candidat après l'entretien</h1>
       {Object.keys(data).map(email => (
         <div key={email} style={styles.emailSection}>
-          <h2 style={styles.emailHeader}> Candidat qui correspond a l'email: {email}</h2>
+          <h2 style={styles.emailHeader}>Candidat qui correspond à l'email: {email}</h2>
           <div style={styles.section}>
-            <h3 style={styles.subHeader}>Result of the Interview Analysis</h3>
+            <h3 style={styles.subHeader}>Résultat de l'analyse de l'entretien</h3>
             <div>
-              <p><strong>Extracted Text:</strong> {parseExtractedText(data[email].candidateData.extractedText)}</p>
+              <p><strong>Texte extrait:</strong> {data[email].candidateData && data[email].candidateData.extractedText ? parseExtractedText(data[email].candidateData.extractedText) : 'N/A'}</p>
             </div>
           </div>
           <div style={styles.section}>
-            <h3 style={styles.subHeader}>CV Analysis Data</h3>
+            <h3 style={styles.subHeader}>Données d'analyse du CV</h3>
             <div>
-              <p><strong>ID:</strong> {data[email].cvAnalysis._id}</p>
-              <p><strong>Applicant ID:</strong> {data[email].cvAnalysis.applicantId}</p>
-              <p><strong>Email:</strong> {data[email].cvAnalysis.email}</p>
+                <p><strong>Email:</strong> {data[email].cvAnalysis && data[email].cvAnalysis.email ? data[email].cvAnalysis.email : 'N/A'}</p>
               <div>
-                <h4>Extracted Text:</h4>
-                {Object.keys(data[email].cvAnalysis.extractedText).map(key => (
-                  <p key={key}><strong>{key}:</strong> {data[email].cvAnalysis.extractedText[key]}</p>
-                ))}
+                <h4>Texte extrait:</h4>
+                {data[email].cvAnalysis && data[email].cvAnalysis.extractedText &&
+                  Object.keys(data[email].cvAnalysis.extractedText).map(key => (
+                    <p key={key}><strong>{key}:</strong> {data[email].cvAnalysis.extractedText[key]}</p>
+                  ))}
               </div>
               <div>
-                <h4>Extracted Faces Links:</h4>
-                {data[email].cvAnalysis.extractedFacesLinks.map(link => (
-                  <p key={link}><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>
-                ))}
+                <h4>Liens des visages extraits:</h4>
+                {data[email].cvAnalysis && data[email].cvAnalysis.extractedFacesLinks &&
+                  data[email].cvAnalysis.extractedFacesLinks.map(link => (
+                    <p key={link}><a href={link} target="_blank" rel="noopener noreferrer">{link}</a></p>
+                  ))}
               </div>
             </div>
           </div>

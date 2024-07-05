@@ -19,6 +19,7 @@ const CandidateData = require('../models/CandidateData');
 const Interview = require('../models/Interview');
 const CvAnalysis = require('D:/platforme entretien/server/models/CvAnalysis');
 const emotionSchema = require('D:/platforme entretien/server/models/emotionSchema');
+const TechnicalItem = require('../models/Createtest');
 const path = require('path');
 const { spawn } = require('child_process');
 // Register route
@@ -779,6 +780,26 @@ router.get('/classify', async (req, res) => {
     } catch (error) {
         console.error('Error retrieving data:', error);
         res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post('/createTechnicalItem', async (req, res) => {
+    const { domain, problem, solution } = req.body;
+
+    try {
+        // Create a new technical item
+        const newItem = new TechnicalItem({ domain, problem, solution });
+        await newItem.save();
+
+        res.status(201).json({
+            message: 'Technical item created successfully',
+            item: newItem,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error creating technical item',
+            error: error.message,
+        });
     }
 });
 

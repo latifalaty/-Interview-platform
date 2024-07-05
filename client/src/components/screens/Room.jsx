@@ -14,7 +14,7 @@ const RoomPage = () => {
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [isConnected, setIsConnected] = useState(false);
-  const email = localStorage.getItem('usermail');
+  const email = localStorage.getItem('userEmail');
   const videoRecorder = useReactMediaRecorder({ screen: true });
   const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);

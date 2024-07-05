@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './classifier.css'; // Import the CSS file
@@ -32,13 +31,15 @@ const CVVideoClassifier = () => {
       <table>
         <thead>
           <tr>
+            <th>Rank</th>
             <th>Email Candidat</th>
             <th>Score</th>
           </tr>
         </thead>
         <tbody>
-          {classifiedPairs.map((pair) => (
+          {classifiedPairs.map((pair, index) => (
             <tr key={`${pair.cv_id}-${pair.video_id}`}>
+              <td>{index + 1}</td>
               <td>{pair.cv_email}</td>
               <td>{pair.similarity.toFixed(2)}</td>
             </tr>
